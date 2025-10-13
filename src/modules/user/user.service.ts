@@ -1,48 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './database/user.entity';
 import { Repository } from 'typeorm';
-import { UpdateUserDTO } from './dtos/update-user.dto';
-import { CreateUserDto } from './dtos/create-user.dto';
-import { UserGender } from 'src/constant/enum';
+import { User } from '../auth/database/user.entity';
+import { UpdateUserRoleDto } from './dtos/update-user-role.dto';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private usersRepository: Repository<User>,
   ) {}
-  async findAll() {
-    return await this.userRepository.find();
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find({
+      select: [
+        'user_id',
+        'full_name',
+        'email',
+        'phone',
+        'role',
+        'created_at',
+      ],
+    });
   }
 
-  async findUserBy(data) {
-    const user = await this.userRepository.findOne({where:{email: data.email}});
-    console.log(user, 'user');
-    
-    return user
-  }
-  async create(userData: CreateUserDto): Promise<User> {
-    const gender = userData.gender
-    if (gender === UserGender.MALE) {
-      userData.avatar = 'http://surl.li/rrtgf';
-    } else if (gender === UserGender.FEMALE) {
-      userData.avatar = 'http://surl.li/rrtpe';
-    } else {
-      userData.avatar = 'http://surl.li/rrtgf';
+  async findOne(id: number): Promise<User> {
+    const user = await this.usersRepository.findOne({
+      where: { user_id: id },
+      select: [
+        'user_id',
+        'full_name',
+        'email',
+        'phone',
+        'role',
+        'created_at',
+      ],
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
-    const user = this.userRepository.create(userData);
-    return await this.userRepository.save(user);
+    return user;
   }
 
-  async update(id, userData: UpdateUserDTO): Promise<User> {
-    await this.userRepository.update(id, userData);
-    return await this.userRepository.findOne(id);
+  async updateRole(id: number, updateUserRoleDto: UpdateUserRoleDto): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ user_id: id });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    user.role = updateUserRoleDto.role;
+    await this.usersRepository.save(user);
+    delete user.password;
+    return user;
   }
 
-  async findOneByEmail(email: any) {
-    const data = await this.userRepository.findOneBy({ email: email });
-    console.log(data, 'data');
-    return data;
+  async remove(id: number): Promise<{ message: string }> {
+    const result = await this.usersRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return { message: `User with ID ${id} has been deleted` };
   }
 }
