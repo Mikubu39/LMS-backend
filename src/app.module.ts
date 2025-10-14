@@ -1,47 +1,46 @@
+// src/app.module.ts
+
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // 1. Import ConfigModule
+import { ConfigModule } from '@nestjs/config'; // GIỮ LẠI: Dùng biến môi trường là tốt nhất
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+// KẾT HỢP: Import tất cả các module từ cả hai nhánh
 import { AuthModule } from './modules/auth/auth.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { UsersModule } from './modules/user/user.module';
-import { User } from './modules/auth/database/user.entity';
-import { Course } from './modules/courses/database/course.entity';
-import { Lesson } from './modules/lessons/database/lesson.entity';
-import { Quiz } from './modules/quizzes/database/quiz.entity';
-import { QuizQuestion } from './modules/quizzes/database/quiz-question.entity';
-import { QuizResult } from './modules/quizzes/database/quiz-result.entity';
+import { CoursesModule } from './modules/courses/course.module';
+import { SessionsModule } from './modules/sessions/sessions.module';
+import { LessonsModule } from './modules/lessons/lessons.module';
 
 @Module({
   imports: [
-    // 2. Thêm ConfigModule.forRoot() lên đầu danh sách imports
+    // GIỮ LẠI: ConfigModule để load file .env
     ConfigModule.forRoot({
-      isGlobal: true, // Giúp ConfigModule khả dụng ở mọi nơi trong ứng dụng
+      isGlobal: true, 
     }),
     
-    // 3. Sửa lại TypeOrmModule để dùng process.env
+    // KẾT HỢP: Dùng cấu hình TypeORM với process.env và cách load entity tự động
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT), // Chuyển port từ string sang number
+      port: parseInt(process.env.DB_PORT),
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       
-      entities: [
-        User, 
-        Course, 
-        Lesson, 
-        Quiz, 
-        QuizQuestion, 
-        QuizResult
-      ],
+      // GIỮ LẠI: Cách load entity tự động này tốt hơn
+      entities: [__dirname + '/**/*.entity{.ts,.js}'], 
       
       synchronize: true,
     }),
     
+    // KẾT HỢP: Thêm tất cả các module chức năng từ cả hai nhánh
     AuthModule,
     UsersModule,
     QuizzesModule,
+    CoursesModule,
+    SessionsModule,
+    LessonsModule,
   ],
 })
 export class AppModule {}
