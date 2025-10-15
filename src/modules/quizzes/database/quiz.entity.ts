@@ -18,7 +18,7 @@ export class Quiz {
   lesson_id: number;
 
   @ManyToOne(() => Lesson, (lesson) => lesson.quizzes)
-  @JoinColumn({ name: 'lesson_id' })
+ 
   lesson: Lesson;
 
   @OneToMany(() => QuizQuestion, (question) => question.quiz)
