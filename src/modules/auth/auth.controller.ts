@@ -2,15 +2,9 @@ import { Controller, Post, Body, UseGuards, Get, Patch, HttpCode, HttpStatus } f
 import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { GetUser } from '../../shared/decorators/get-user.decorator';
-import { User } from './database/user.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { UpdateProfileDto } from './dtos/update-profile.dto';
-import { ChangePasswordDto } from './dtos/change-password.dto';
-import { ForgotPasswordDto } from './dtos/forget-password.dto';
+import { ApiTags, ApiOperation, ApiResponse} from '@nestjs/swagger';
 
-@ApiTags('1. Auth (Người dùng)')
+@ApiTags('01. Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -32,41 +26,4 @@ export class AuthController {
     return this.authService.login(loginAuthDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth('JWT-auth')
-  @Get('profile')
-  @ApiOperation({ summary: 'Lấy thông tin cá nhân của người dùng hiện tại' })
-  @ApiResponse({ status: 200, description: 'Trả về thông tin người dùng.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getProfile(@GetUser() user: User) {
-    delete user.password;
-    return user;
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth('JWT-auth')
-  @Patch('profile/update')
-  @ApiOperation({ summary: 'Cập nhật thông tin cá nhân' })
-  updateProfile(@GetUser() user: User, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.authService.updateProfile(user.user_id, updateProfileDto);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth('JWT-auth')
-  @Patch('password/change')
-  @ApiOperation({ summary: 'Đổi mật khẩu' })
-  changePassword(@GetUser() user: User, @Body() changePasswordDto: ChangePasswordDto) {
-    return this.authService.changePassword(user.email, changePasswordDto);
-  }
-  
-  @HttpCode(HttpStatus.OK)
-  @Post('password/forgot')
-  @ApiOperation({ summary: 'Yêu cầu reset mật khẩu (Gửi email)' })
-  @ApiResponse({ status: 200, description: 'Yêu cầu đã được xử lý.'})
-  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    // Logic gửi email thực tế sẽ cần tích hợp một dịch vụ như Nodemailer hoặc SendGrid.
-    // Đây là placeholder.
-    console.log(`Password reset requested for: ${forgotPasswordDto.email}`);
-    return { message: 'Nếu email tồn tại, một hướng dẫn reset mật khẩu đã được gửi đi.' };
-  }
 }

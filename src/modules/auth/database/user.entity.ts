@@ -1,4 +1,6 @@
 import { Exclude } from 'class-transformer';
+import { UserRole } from 'src/constant/enum';
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,16 +9,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export enum UserRole {
-  STUDENT = 'student',
-  TEACHER = 'teacher',
-  ADMIN = 'admin',
-}
+
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
-  user_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  user_id: string;
 
   @Column({ length: 100 })
   full_name: string;
@@ -38,6 +36,15 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ type: 'date', nullable: true })
+  dateOfBirth?: Date;
+
+  @Column({ nullable: true })
+  gender?: string;
+  
   @Column({ length: 255, nullable: true })
   avatar: string;
 

@@ -7,11 +7,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 // KẾT HỢP: Import tất cả các module từ cả hai nhánh
 import { AuthModule } from './modules/auth/auth.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
-import { UsersModule } from './modules/user/user.module';
 import { CoursesModule } from './modules/courses/course.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
-
+import { QuestionsModule } from './modules/questions/questions.module';
 @Module({
   imports: [
     // GIỮ LẠI: ConfigModule để load file .env
@@ -36,11 +35,11 @@ import { LessonsModule } from './modules/lessons/lessons.module';
     
     // KẾT HỢP: Thêm tất cả các module chức năng từ cả hai nhánh
     AuthModule,
-    UsersModule,
     QuizzesModule,
     CoursesModule,
     SessionsModule,
     LessonsModule,
+    QuestionsModule
   ],
 })
 export class AppModule {}

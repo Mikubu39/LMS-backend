@@ -11,8 +11,6 @@ import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { UpdateProfileDto } from './dtos/update-profile.dto';
-import { ChangePasswordDto } from './dtos/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -45,7 +43,7 @@ export class AuthService {
     return newUser;
   }
 
-  async login(loginAuthDto: LoginAuthDto): Promise<{ accessToken: string }> {
+  async login(loginAuthDto: LoginAuthDto): Promise<{ access_token: string }> {
     const { email, password } = loginAuthDto;
 
     const user = await this.usersRepository.findOneBy({ email });
@@ -59,40 +57,8 @@ export class AuthService {
     }
 
     const payload = { email: user.email, sub: user.user_id, role: user.role };
-    const accessToken = this.jwtService.sign(payload);
+    const access_token = this.jwtService.sign(payload);
 
-    return { accessToken };
-  }
-
-  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto): Promise<User> {
-    const user = await this.usersRepository.findOneBy({ user_id: userId });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    Object.assign(user, updateProfileDto);
-    await this.usersRepository.save(user);
-    delete user.password;
-    return user;
-  }
-
-  async changePassword(email: string, changePasswordDto: ChangePasswordDto) {
-    const { oldPassword, newPassword } = changePasswordDto;
-    const user = await this.usersRepository.findOneBy({ email });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const isPasswordMatching = await bcrypt.compare(oldPassword, user.password);
-    if (!isPasswordMatching) {
-      throw new UnauthorizedException('Old password is not correct');
-    }
-
-    const salt = await bcrypt.genSalt();
-    user.password = await bcrypt.hash(newPassword, salt);
-
-    await this.usersRepository.save(user);
-    return { message: 'Password changed successfully' };
+    return { access_token };
   }
 }

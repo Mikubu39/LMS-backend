@@ -1,21 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Quiz } from './quiz.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { QuizQuestionAssignment } from './quiz-question-assignment.entity';
 
 @Entity('quiz_questions')
 export class QuizQuestion {
-  @PrimaryGeneratedColumn()
-  question_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  question_id: string;
 
-  @Column()
-  quiz_id: number;
 
-  @ManyToOne(() => Quiz, (quiz) => quiz.questions)
-  @JoinColumn({ name: 'quiz_id' })
-  quiz: Quiz;
 
   @Column('text')
   question_text: string;
+
+  
+  @Index()
+  @Column({ length: 100, nullable: true })
+  category: string; // Ví dụ: 'NestJS', 'TypeScript'
 
   @Column('text')
   option_a: string;
@@ -30,6 +30,10 @@ export class QuizQuestion {
   option_d: string;
 
   @Column({ length: 1 })
-  @Exclude() // Không trả về đáp án đúng cho học viên
+  @Exclude() 
   correct_answer: string;
+
+  // Thêm quan hệ M-N qua bảng trung gian
+  @OneToMany(() => QuizQuestionAssignment, (assignment) => assignment.question)
+  assignments: QuizQuestionAssignment[];
 }

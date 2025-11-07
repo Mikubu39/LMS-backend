@@ -1,3 +1,4 @@
+// auth.module.ts
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -6,17 +7,24 @@ import { User } from './database/user.entity';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: 'YOUR_SECRET_KEY', // Luôn dùng biến môi trường cho production
-      signOptions: {
-        expiresIn: '1d', // Token hết hạn sau 1 ngày
-      },
+    
+    JwtModule.registerAsync({
+      imports: [ConfigModule], 
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'), 
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN'), 
+        },
+      }),
+      inject: [ConfigService], 
     }),
+    ConfigModule, 
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

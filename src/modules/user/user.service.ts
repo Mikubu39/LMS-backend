@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+/*import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../auth/database/user.entity';
@@ -61,3 +61,4 @@ export class UsersService {
     return { message: `User with ID ${id} has been deleted` };
   }
 }
+  */

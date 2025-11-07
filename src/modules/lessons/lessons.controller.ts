@@ -22,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { Lesson } from './database/lesson.entity';
 
-@ApiTags('lessons')
+@ApiTags('05. Lessons')
 @ApiBearerAuth()
 @Controller('lessons')
 export class LessonsController {

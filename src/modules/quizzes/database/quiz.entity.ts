@@ -1,12 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { QuizQuestion } from './quiz-question.entity'
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Lesson } from '../../lessons/database/lesson.entity';
 import { QuizResult } from './quiz-result.entity';
+import { QuizQuestionAssignment } from './quiz-question-assignment.entity'; 
 
 @Entity('quizzes')
 export class Quiz {
-  @PrimaryGeneratedColumn()
-  quiz_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  quiz_id: string;
 
   @Column({ length: 200 })
   title: string;
@@ -14,15 +14,19 @@ export class Quiz {
   @Column()
   duration: number; // Thời gian làm bài (phút)
 
-  @Column()
-  lesson_id: number;
+  @Index()
+  @Column({ type: 'uuid' })
+  lesson_id: string;
 
   @ManyToOne(() => Lesson, (lesson) => lesson.quizzes)
- 
+  @JoinColumn({ name: 'lesson_id' })
   lesson: Lesson;
 
-  @OneToMany(() => QuizQuestion, (question) => question.quiz)
-  questions: QuizQuestion[];
+ 
+  
+  
+  @OneToMany(() => QuizQuestionAssignment, (assignment) => assignment.quiz)
+  questionAssignments: QuizQuestionAssignment[];
   
   @OneToMany(() => QuizResult, (result) => result.quiz)
   results: QuizResult[];

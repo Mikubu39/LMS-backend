@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { Session } from './database/session.entity';
 
-@ApiTags('sessions')
+@ApiTags('04. Sessions')
 @ApiBearerAuth() // <-- 2. Thêm vào đây để bảo vệ toàn bộ controller
 @Controller('sessions')
 export class SessionsController {
