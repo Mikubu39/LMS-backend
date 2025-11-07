@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsString, ValidateNested, IsUUID } from 'class-validator'; // <-- THÊM IsUUID
 import { Type } from 'class-transformer';
 
 class AnswerDto {
-  @ApiProperty({ description: 'ID của câu hỏi' })
+  @ApiProperty({ description: 'ID (uuid) của câu hỏi' })
   @IsNotEmpty()
-  @IsNumber()
-  question_id: number;
+  @IsUUID() // <-- SỬA
+  question_id: string; // <-- SỬA
 
   @ApiProperty({ description: "Đáp án được chọn, ví dụ: 'a'", example: 'a' })
   @IsNotEmpty()

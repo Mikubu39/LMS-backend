@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+/*import { Module } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { UsersController } from './user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,3 +11,4 @@ import { AuthModule } from '../auth/auth.module';
   providers: [UsersService],
 })
 export class UsersModule {}
+*/

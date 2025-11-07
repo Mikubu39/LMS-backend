@@ -1,16 +1,18 @@
-import { Controller, Post, Body, Param, UseGuards, ParseIntPipe, Get, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, Get, Patch, Delete, ParseUUIDPipe, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { QuizzesService } from './quizzes.service';
 import { GetUser } from '../../shared/decorators/get-user.decorator';
-import { User, UserRole } from '../auth/database/user.entity';
+import { User } from '../auth/database/user.entity';
+import { UserRole } from 'src/constant/enum';
 import { SubmitQuizDto } from './dtos/submit-quiz.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Roles } from '../../shared/decorators/roles.decorator';
 import { RolesGuard } from '../../shared/guard/roles.guard';
 import { CreateQuizDto } from './dtos/create-quiz.dto';
 import { UpdateQuizDto } from './dtos/update-quiz.dto';
+import { AssignQuestionDto } from './dtos/assign-question.dto'; 
 
-@ApiTags('3. Quizzes (Học viên & Giảng viên)')
+@ApiTags('08. Quizzes')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(AuthGuard('jwt'))
 @Controller('quizzes')
@@ -20,45 +22,61 @@ export class QuizzesController {
   @Post()
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Tạo một bài quiz mới (Admin, Teacher)' })
+  @ApiOperation({ summary: 'Tạo một "vỏ" quiz mới (Admin, Teacher)' })
   create(@Body() createQuizDto: CreateQuizDto) {
     return this.quizzesService.create(createQuizDto);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Lấy thông tin chi tiết một bài quiz' })
-  @ApiResponse({ status: 200, description: 'Trả về chi tiết quiz (không có đáp án đúng nếu là học viên)'})
-  findOne(@Param('id', ParseIntPipe) id: number, @GetUser() user: User) {
+  @ApiOperation({ summary: 'Lấy thông tin chi tiết một bài quiz (và các câu hỏi của nó)' })
+  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
     const includeAnswers = user.role === UserRole.ADMIN || user.role === UserRole.TEACHER;
     return this.quizzesService.findOne(id, includeAnswers);
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.TEACHER)
-  @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Cập nhật một bài quiz (Admin, Teacher)' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateQuizDto: UpdateQuizDto) {
+
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateQuizDto: UpdateQuizDto) {
     return this.quizzesService.update(id, updateQuizDto);
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.TEACHER)
-  @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Xóa một bài quiz (Admin, Teacher)' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.quizzesService.remove(id);
   }
 
   @Post(':id/submit')
-  @Roles(UserRole.STUDENT)
-  @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Nộp bài và chấm điểm một bài quiz (Học viên)' })
-  @ApiParam({ name: 'id', description: 'ID của bài quiz' })
+
   submitQuiz(
-    @Param('id', ParseIntPipe) quizId: number,
+    @Param('id', ParseUUIDPipe) quizId: string, 
     @GetUser() user: User,
     @Body() submitQuizDto: SubmitQuizDto,
   ) {
     return this.quizzesService.submitAndGradeQuiz(user.user_id, quizId, submitQuizDto);
+  }
+
+
+
+  @Put(':quizId/questions') // <-- ĐỔI SANG PUT VÀ THAY ĐỔI ROUTE
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  @UseGuards(RolesGuard)
+  @ApiOperation({ 
+    summary: 'Gán câu hỏi cho quiz' 
+  })
+  updateQuizQuestions( // <-- Đổi tên method
+    @Param('quizId', ParseUUIDPipe) quizId: string,
+    @Body() assignDto: AssignQuestionDto, // <-- Vẫn dùng DTO mảng
+  ) {
+    // Gọi phương thức service mới
+    return this.quizzesService.assignQuizQuestions(quizId, assignDto);
+  }
+
+  @Delete('unassign-question/:assignmentId')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Gỡ một câu hỏi ra khỏi quiz (Admin, Teacher)' })
+  unassignQuestion(@Param('assignmentId', ParseUUIDPipe) assignmentId: string) {
+    return this.quizzesService.unassignQuestionFromQuiz(assignmentId);
   }
 }

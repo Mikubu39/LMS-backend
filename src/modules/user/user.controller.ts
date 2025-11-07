@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Delete, UseGuards, ParseIntPipe, Patch, Body } from '@nestjs/common';
+/*import { Controller, Get, Param, Delete, UseGuards, ParseIntPipe, Patch, Body } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../shared/guard/roles.guard';
@@ -44,3 +44,4 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 }
+  */
