@@ -1,7 +1,7 @@
 export enum UserRole {
-  ADMIN,
-  GUEST,
-  CUSTOMER 
+  STUDENT = 'student',
+  TEACHER = 'teacher',
+  ADMIN = 'admin',
 }
 
 export enum UserGender{
