@@ -1,6 +1,5 @@
 // src/modules/courses/dtos/create-course.dto.ts
-
-import { ApiProperty } from '@nestjs/swagger'; // <--- 1. Import ApiProperty
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -8,12 +7,11 @@ import {
   IsEnum,
   IsNumber,
   Min,
+  IsUUID,
 } from 'class-validator';
 import { CourseLevel } from '../database/courses.entity';
 
 export class CreateCourseDto {
-  // --- 2. Thêm decorator cho từng thuộc tính ---
-
   @ApiProperty({
     description: 'Tên của khóa học',
     example: 'Lập trình NestJS từ A đến Z',
@@ -24,15 +22,25 @@ export class CreateCourseDto {
 
   @ApiProperty({
     description: 'Mô tả chi tiết về nội dung khóa học',
-    required: false, // <-- Rất quan trọng khi dùng @IsOptional()
+    required: false,
     example: 'Khóa học này sẽ giúp bạn thành thạo NestJS trong 1 tháng.',
   })
   @IsString()
   @IsOptional()
   description?: string;
 
+  // --- MỚI: THUMBNAIL ---
   @ApiProperty({
-    description: 'Giá của khóa học (Để 0 nếu miễn phí)',
+    description: 'Link ảnh đại diện khóa học',
+    required: false,
+    example: 'https://example.com/thumbnail.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  thumbnail?: string;
+
+  @ApiProperty({
+    description: 'Giá của khóa học',
     required: false,
     example: 499000,
     minimum: 0,
@@ -43,12 +51,22 @@ export class CreateCourseDto {
   price?: number;
 
   @ApiProperty({
-    description: 'Trình độ yêu cầu của khóa học',
+    description: 'Trình độ yêu cầu',
     required: false,
-    enum: CourseLevel, // <-- Giúp Swagger hiển thị các lựa chọn enum
-    example: CourseLevel.BEGINNER, // Giả sử bạn có giá trị này trong enum
+    enum: CourseLevel,
+    example: CourseLevel.BEGINNER,
   })
   @IsEnum(CourseLevel)
   @IsOptional()
   level?: CourseLevel;
+
+  // --- MỚI: CHỌN GIẢNG VIÊN (Dành cho Admin tạo hộ) ---
+  @ApiProperty({
+    description: 'ID giảng viên (Nếu trống sẽ lấy người đang đăng nhập)',
+    required: false,
+    example: 'uuid-user-id',
+  })
+  @IsUUID()
+  @IsOptional()
+  instructorId?: string;
 }

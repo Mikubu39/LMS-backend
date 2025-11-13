@@ -1,15 +1,15 @@
+// src/modules/users/database/user.entity.ts
 import { Exclude } from 'class-transformer';
 import { UserRole } from 'src/constant/enum';
-
+import { Course } from '../../courses/database/courses.entity'; // Import Course
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
-
-
 
 @Entity('users')
 export class User {
@@ -58,6 +58,10 @@ export class User {
   updated_at: Date;
 
   @Column({ nullable: true })
-  @Exclude() // Ẩn khỏi các response
+  @Exclude()
   hashed_refresh_token: string;
+
+  // --- MỚI: DANH SÁCH KHÓA HỌC DO USER NÀY DẠY ---
+  @OneToMany(() => Course, (course) => course.instructor)
+  courses: Course[];
 }
