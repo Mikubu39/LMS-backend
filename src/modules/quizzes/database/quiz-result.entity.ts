@@ -4,16 +4,16 @@ import { Quiz } from './quiz.entity';
 
 @Entity('quiz_results')
 export class QuizResult {
-  @PrimaryGeneratedColumn('uuid') // <-- SỬA
-  result_id: string; // <-- SỬA
+  @PrimaryGeneratedColumn('uuid') 
+  result_id: string; 
 
   @Index()
-  @Column({ type: 'uuid' }) // <-- SỬA
-  quiz_id: string; // <-- SỬA
+  @Column({ type: 'uuid' }) 
+  quiz_id: string; 
 
   @Index()
   @Column()
-  user_id: string; // <-- GIỮ NGUYÊN
+  user_id: string;
   
   @Column('decimal', { precision: 5, scale: 2 })
   score: number;

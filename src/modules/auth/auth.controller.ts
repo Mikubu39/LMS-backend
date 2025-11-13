@@ -1,8 +1,9 @@
-import { Controller, Post, Body, UseGuards, Get, Patch, HttpCode, HttpStatus } from '@nestjs/common';
+import {   Controller,   Post,   Body,   UseGuards,  HttpCode,   HttpStatus,  Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
-import { ApiTags, ApiOperation, ApiResponse} from '@nestjs/swagger';
+import {   ApiTags,   ApiOperation,   ApiResponse,   ApiBearerAuth } from '@nestjs/swagger';
+import { JwtRefreshGuard } from 'src/shared/guard/jwt-refresh.guard'; 
 
 @ApiTags('01. Auth')
 @Controller('auth')
@@ -20,10 +21,25 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   @ApiOperation({ summary: 'Đăng nhập vào hệ thống' })
-  @ApiResponse({ status: 201, description: 'Đăng nhập thành công, trả về access token.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Đăng nhập thành công, trả về access_token và refresh_token.' 
+  })
   @ApiResponse({ status: 401, description: 'Sai thông tin đăng nhập.' })
   login(@Body() loginAuthDto: LoginAuthDto) {
     return this.authService.login(loginAuthDto);
   }
 
+  
+  @UseGuards(JwtRefreshGuard) 
+  @Post('refresh')
+  @ApiBearerAuth('JWT-auth') 
+  @ApiOperation({ summary: 'Làm mới Access Token' })
+  @ApiResponse({ status: 200, description: 'Trả về access_token mới.' })
+  @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ.' })
+  refreshToken(@Request() req) {
+   
+    const user = req.user; 
+    return this.authService.refreshToken(user);
+  }
 }

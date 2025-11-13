@@ -28,6 +28,9 @@ export class User {
 
   @Column({ length: 20, nullable: true })
   phone: string;
+  
+  @Column({ type: 'text', nullable: true })
+  address?: string;
 
   @Column({
     type: 'enum',
@@ -53,4 +56,8 @@ export class User {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ nullable: true })
+  @Exclude() // Ẩn khỏi các response
+  hashed_refresh_token: string;
 }

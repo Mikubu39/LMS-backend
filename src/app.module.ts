@@ -10,7 +10,13 @@ import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { CoursesModule } from './modules/courses/course.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
-import { QuestionsModule } from './modules/questions/questions.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { QuestionsModule } from './modules/questions/questions.module'; // <-- THÊM
+import { LessonVideoModule } from './modules/lesson-video/lesson-video.module'
+import {PostsModule} from './modules/posts/posts.module'
+import { StudentModule } from './modules/student/student.module';
+import { SubmissionModule } from './modules/submission/submission.module';
 @Module({
   imports: [
     // GIỮ LẠI: ConfigModule để load file .env
@@ -39,7 +45,13 @@ import { QuestionsModule } from './modules/questions/questions.module';
     CoursesModule,
     SessionsModule,
     LessonsModule,
-    QuestionsModule
+    CloudinaryModule,
+    UploadModule,
+    QuestionsModule,
+    LessonVideoModule,
+    PostsModule,
+    StudentModule,
+    SubmissionModule
   ],
 })
 export class AppModule {}

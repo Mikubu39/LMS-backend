@@ -11,6 +11,7 @@ import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config'; 
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
+    private configService: ConfigService, 
   ) {}
 
   async register(registerAuthDto: RegisterAuthDto): Promise<User> {
@@ -43,7 +45,10 @@ export class AuthService {
     return newUser;
   }
 
-  async login(loginAuthDto: LoginAuthDto): Promise<{ access_token: string }> {
+ 
+  async login(
+    loginAuthDto: LoginAuthDto,
+  ): Promise<{ access_token: string; refresh_token: string }> { 
     const { email, password } = loginAuthDto;
 
     const user = await this.usersRepository.findOneBy({ email });
@@ -57,7 +62,44 @@ export class AuthService {
     }
 
     const payload = { email: user.email, sub: user.user_id, role: user.role };
-    const access_token = this.jwtService.sign(payload);
+    
+  
+    const [access_token, refresh_token] = await Promise.all([
+      // Access Token
+      this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
+      }),
+      // Refresh Token
+      this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
+      }),
+    ]);
+
+    const salt = await bcrypt.genSalt();
+    const hashedRt = await bcrypt.hash(refresh_token, salt);
+    
+    await this.usersRepository.update(user.user_id, {
+      hashed_refresh_token: hashedRt,
+    });
+
+    return { access_token, refresh_token };
+  }
+
+  
+  async refreshToken(user: User): Promise<{ access_token: string }> {
+    
+    const payload = { 
+      email: user.email, 
+      sub: user.user_id, 
+      role: user.role 
+    };
+    
+    const access_token = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
+    });
 
     return { access_token };
   }
