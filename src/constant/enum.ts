@@ -2,12 +2,13 @@ export enum UserRole {
   STUDENT = 'student',
   TEACHER = 'teacher',
   ADMIN = 'admin',
+  GUEST = 'guest',
 }
 
-export enum UserGender{
+export enum UserGender {
   MALE,
   FEMALE,
-  OTHER
+  OTHER,
 }
 
 // rating.enum.ts
@@ -18,4 +19,3 @@ export enum Rating {
   FOUR_STARS = 4,
   FIVE_STARS = 5,
 }
-
