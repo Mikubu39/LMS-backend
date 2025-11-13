@@ -148,45 +148,64 @@ export class QuizzesService {
   
  
   async submitAndGradeQuiz(
-    userId: string, 
-    quizId: string, 
-    submitQuizDto: SubmitQuizDto,
-  ) {
-    const questionIds = submitQuizDto.answers.map(a => a.question_id);
-    const correctQuestions = await this.questionsRepository.find({
-      where: { question_id: In(questionIds) }, 
-    });
+  userId: string,
+  quizId: string,
+  submitQuizDto: SubmitQuizDto,
+) {
+  const quizAssignments = await this.assignmentRepository.find({
+    where: { quiz: { quiz_id: quizId } },
+    relations: ['question'],
+  });
 
-    if (correctQuestions.length === 0) {
-      throw new NotFoundException(`Quiz with ID ${quizId} not found or has no questions.`);
+
+  const correctQuestions = quizAssignments.map((a) => a.question);
+
+  if (correctQuestions.length === 0) {
+    throw new NotFoundException(
+      `Quiz with ID ${quizId} not found or has no questions.`,
+    );
+  }
+
+  // Tạo danh sách ID hợp lệ để kiểm tra nhanh
+  const validQuestionIds = correctQuestions.map((q) => q.question_id);
+
+  let correctAnswersCount = 0;
+
+  submitQuizDto.answers.forEach((studentAnswer) => {
+
+    if (!validQuestionIds.includes(studentAnswer.question_id)) {
+      return; 
     }
 
-    let correctAnswersCount = 0;
-    submitQuizDto.answers.forEach((studentAnswer) => {
-      const question = correctQuestions.find(
-        (q) => q.question_id === studentAnswer.question_id,
-      );
-      if (question && question.correct_answer === studentAnswer.selected_answer) {
-        correctAnswersCount++;
-      }
-    });
+    // Tìm câu hỏi gốc để so sánh đáp án
+    const question = correctQuestions.find(
+      (q) => q.question_id === studentAnswer.question_id,
+    );
 
-    const score = (correctAnswersCount / correctQuestions.length) * 100;
+    // So sánh đáp án
+    if (question && question.correct_answer === studentAnswer.selected_answer) {
+      correctAnswersCount++;
+    }
+  });
 
-    const newResult = this.resultsRepository.create({
-      user_id: userId,
-      quiz_id: quizId,
-      score,
-    });
-    await this.resultsRepository.save(newResult);
+  // BƯỚC 3: Tính điểm
+  const score = (correctAnswersCount / correctQuestions.length) * 100;
 
-    return {
-      quizId,
-      totalQuestions: correctQuestions.length,
-      correctAnswers: correctAnswersCount,
-      score: parseFloat(score.toFixed(2)),
-      message: 'Quiz submitted successfully!',
-    };
-  }
+  // Lưu kết quả
+  const newResult = this.resultsRepository.create({
+    user_id: userId,
+    quiz_id: quizId,
+    score,
+  });
+  await this.resultsRepository.save(newResult);
+
+  return {
+    quizId,
+    totalQuestions: correctQuestions.length,
+    correctAnswers: correctAnswersCount,
+    score: parseFloat(score.toFixed(2)),
+    message: 'Quiz submitted successfully!',
+  };
+}
   
 }
