@@ -4,9 +4,10 @@ import { CoursesService } from './course.service';
 import { CoursesController } from './course.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Course } from './database/courses.entity';
+import { User } from '../auth/database/user.entity'; // Import User
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Course])], // <-- Thêm dòng này
+  imports: [TypeOrmModule.forFeature([Course, User])], // Thêm User vào đây
   controllers: [CoursesController],
   providers: [CoursesService],
 })
