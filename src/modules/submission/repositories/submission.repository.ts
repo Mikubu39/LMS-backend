@@ -42,7 +42,7 @@ export class SubmissionRepository {
 
     if (search) {
       queryBuilder.where(
-        '(submission.gitLink LIKE :search OR submission.description LIKE :search OR student.fullName LIKE :search OR student.email LIKE :search)',
+        '(submission.gitLink LIKE :search OR submission.description LIKE :search OR student.full_name LIKE :search OR student.email LIKE :search)',
         { search: `%${search}%` },
       );
     }

@@ -16,7 +16,7 @@ export class UpdateStudentDto {
   @ApiPropertyOptional({ example: 'Nguyễn Văn B', description: 'Họ và tên' })
   @IsOptional()
   @IsString()
-  fullName?: string;
+  full_name?: string;
 
   @ApiPropertyOptional({ example: '0987654321', description: 'Số điện thoại' })
   @IsOptional()

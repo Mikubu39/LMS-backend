@@ -12,7 +12,7 @@ export class SearchStudentDto {
 
   @IsOptional()
   @IsString()
-  fullName?: string;
+  full_name?: string;
 
   @IsOptional()
   @Type(() => Number)

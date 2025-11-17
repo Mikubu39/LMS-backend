@@ -83,7 +83,7 @@ export class SubmissionController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Danh sách bài nộp (tìm kiếm + phân trang)' })
-  @ApiQuery({ name: 'search', required: false, description: 'Tìm theo gitLink, description, student.fullName, student.email' })
+  @ApiQuery({ name: 'search', required: false, description: 'Tìm theo gitLink, description, student.full_name, student.email' })
   @ApiQuery({ name: 'studentId', required: false, description: 'Lọc theo ID học viên' })
   @ApiQuery({ name: 'gitLink', required: false, description: 'Lọc theo link Git' })
   @ApiQuery({ name: 'status', required: false, enum: ['pending', 'reviewed', 'rejected', 'approved'], description: 'Lọc theo trạng thái' })

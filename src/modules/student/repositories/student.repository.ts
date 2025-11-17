@@ -21,7 +21,7 @@ export class StudentRepository {
   async findAll(
     searchDto: SearchStudentDto,
   ): Promise<{ students: User[]; total: number }> {
-    const { search, email, fullName, page = 1, limit = 10 } = searchDto;
+    const { search, email, full_name, page = 1, limit = 10 } = searchDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.studentRepository.createQueryBuilder('student');
@@ -39,9 +39,9 @@ export class StudentRepository {
       });
     }
 
-    if (fullName) {
-      queryBuilder.andWhere('student.full_name LIKE :fullName', {
-        fullName: `%${fullName}%`,
+    if (full_name) {
+      queryBuilder.andWhere('student.full_name LIKE :full_name', {
+        full_name: `%${full_name}%`,
       });
     }
 

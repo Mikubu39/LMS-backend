@@ -9,7 +9,7 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'Nguyễn Văn C', description: 'Họ và tên' })
   @IsOptional()
   @IsString()
-  fullName?: string;
+  full_name?: string;
 
   @ApiPropertyOptional({ example: '0123456789', description: 'Số điện thoại' })
   @IsOptional()
