@@ -66,12 +66,24 @@ export class StudentController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Admin lấy danh sách users (tìm kiếm + phân trang)' })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'email', required: false })
-  // ... (các ApiQuery khác)
+  @ApiQuery({ name: 'search', required: false, description: 'Tìm kiếm chung (email, tên, sđt)' }) // Cập nhật description
+  @ApiQuery({ name: 'email', required: false, description: 'Lọc theo email' })
+  @ApiQuery({ name: 'full_name', required: false, description: 'Lọc theo tên' }) // Thêm ApiQuery
+
+  // --- THÊM MỚI TẠI ĐÂY ---
+  @ApiQuery({ 
+    name: 'role', 
+    required: false, 
+    enum: UserRole, 
+    description: 'Lọc theo vai trò' 
+  })
+  // --- KẾT THÚC THÊM MỚI ---
+
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 }) // Thêm ApiQuery
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 }) // Thêm ApiQuery
   @ApiResponse({ status: 200, type: PaginatedStudentsResponseDto })
   async findAll(
-    @Query() searchDto: SearchStudentDto,
+    @Query() searchDto: SearchStudentDto, // DTO này giờ đã chứa 'role'
   ): Promise<PaginatedStudentsResponseDto> {
     return this.studentService.findAll(searchDto);
   }

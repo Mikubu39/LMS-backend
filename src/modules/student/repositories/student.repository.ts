@@ -21,7 +21,8 @@ export class StudentRepository {
   async findAll(
     searchDto: SearchStudentDto,
   ): Promise<{ students: User[]; total: number }> {
-    const { search, email, full_name, page = 1, limit = 10 } = searchDto;
+    // <<< SỬA ĐỔI: Thêm 'role' vào destructuring
+    const { search, email, full_name, role, page = 1, limit = 10 } = searchDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.studentRepository.createQueryBuilder('student');
@@ -44,6 +45,13 @@ export class StudentRepository {
         full_name: `%${full_name}%`,
       });
     }
+
+    // --- THÊM MỚI TẠI ĐÂY ---
+    if (role) {
+      // Thêm điều kiện lọc theo vai trò
+      queryBuilder.andWhere('student.role = :role', { role });
+    }
+    // --- KẾT THÚC THÊM MỚI ---
 
     const [students, total] = await queryBuilder
       .skip(skip)
