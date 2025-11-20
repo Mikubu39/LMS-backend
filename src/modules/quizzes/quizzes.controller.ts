@@ -1,3 +1,4 @@
+// src/modules/quizzes/quizzes.controller.ts
 import { Controller, Post, Body, Param, UseGuards, Get, Patch, Delete, ParseUUIDPipe, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { QuizzesService } from './quizzes.service';
@@ -5,7 +6,8 @@ import { GetUser } from '../../shared/decorators/get-user.decorator';
 import { User } from '../auth/database/user.entity';
 import { UserRole } from 'src/constant/enum';
 import { SubmitQuizDto } from './dtos/submit-quiz.dto';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse } from '@nestjs/swagger';
+// --- THÊM ApiOperation, ApiBody ---
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger'; 
 import { Roles } from '../../shared/decorators/roles.decorator';
 import { RolesGuard } from '../../shared/guard/roles.guard';
 import { CreateQuizDto } from './dtos/create-quiz.dto';
@@ -23,6 +25,7 @@ export class QuizzesController {
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Tạo một "vỏ" quiz mới (Admin, Teacher)' })
+  @ApiBody({ type: CreateQuizDto }) // <-- Đã thêm
   create(@Body() createQuizDto: CreateQuizDto) {
     return this.quizzesService.create(createQuizDto);
   }
@@ -34,20 +37,32 @@ export class QuizzesController {
     return this.quizzesService.findOne(id, includeAnswers);
   }
 
+  // --- THÊM MỚI TẠI ĐÂY ---
   @Patch(':id')
-
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Cập nhật thông tin quiz (Admin, Teacher)' })
+  @ApiBody({ type: UpdateQuizDto })
+  // --- KẾT THÚC THÊM MỚI ---
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateQuizDto: UpdateQuizDto) {
     return this.quizzesService.update(id, updateQuizDto);
   }
 
   @Delete(':id')
-  
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Xóa một quiz (Admin, Teacher)' }) // <-- Thêm mô tả
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.quizzesService.remove(id);
   }
 
+  // --- THÊM MỚI TẠI ĐÂY ---
   @Post(':id/submit')
-
+  @Roles(UserRole.STUDENT) // <-- Giả định Student mới nộp bài
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Nộp bài làm quiz (Student)' })
+  @ApiBody({ type: SubmitQuizDto })
+  // --- KẾT THÚC THÊM MỚI ---
   submitQuiz(
     @Param('id', ParseUUIDPipe) quizId: string, 
     @GetUser() user: User,
@@ -64,6 +79,7 @@ export class QuizzesController {
   @ApiOperation({ 
     summary: 'Gán câu hỏi cho quiz' 
   })
+  @ApiBody({ type: AssignQuestionDto }) // <-- Đã thêm
   updateQuizQuestions( // <-- Đổi tên method
     @Param('quizId', ParseUUIDPipe) quizId: string,
     @Body() assignDto: AssignQuestionDto, // <-- Vẫn dùng DTO mảng

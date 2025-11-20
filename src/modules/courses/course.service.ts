@@ -62,10 +62,29 @@ export class CoursesService {
   }
 
   // 3. LOGIC LẤY CHI TIẾT (KÈM INFO GIẢNG VIÊN)
-  async findOne(id: string): Promise<Course> {
+ // src/modules/courses/course.service.ts
+
+async findOne(id: string): Promise<Course> {
     const course = await this.courseRepository.findOne({
       where: { id },
-      relations: ['instructor'],
+      relations: [
+        'instructor', 
+        'sessions', 
+        'sessions.lessons'
+      ],
+      // 👇 ĐÃ SỬA: Gộp chung vào một object 'sessions'
+      order: {
+        sessions: {
+          order: 'ASC',       // 1. Sắp xếp chương theo thứ tự
+          createdAt: 'ASC',   // 2. Nếu trùng order thì cái cũ lên trước
+          
+          // Sắp xếp bài học bên trong chương (Lồng vào trong này luôn)
+          lessons: {
+            order: 'ASC',
+            createdAt: 'ASC',
+          },
+        },
+      },
       select: {
         instructor: {
           user_id: true,
@@ -75,6 +94,7 @@ export class CoursesService {
         },
       },
     });
+
     if (!course) {
       throw new NotFoundException(`Không tìm thấy khóa học với ID #${id}`);
     }

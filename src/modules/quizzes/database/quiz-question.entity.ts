@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index, CreateDateColumn, UpdateDateColumn,} from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { QuizQuestionAssignment } from './quiz-question-assignment.entity';
 
@@ -36,4 +36,10 @@ export class QuizQuestion {
   // Thêm quan hệ M-N qua bảng trung gian
   @OneToMany(() => QuizQuestionAssignment, (assignment) => assignment.question)
   assignments: QuizQuestionAssignment[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 }

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags, ApiOperation, ApiBody, } from '@nestjs/swagger';
 
 @ApiTags('12. Posts (Utility)')
 @Controller('posts')
@@ -10,6 +10,8 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Tạo bài post mới' })
+  @ApiBody({ type: CreatePostDto })
   create(@Body() createPostDto: CreatePostDto) {
     return this.postsService.create(createPostDto);
   }
@@ -38,6 +40,8 @@ export class PostsController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Cập nhật bài post' })
+  @ApiBody({ type: UpdatePostDto })
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
     return this.postsService.update(+id, updatePostDto);
   }

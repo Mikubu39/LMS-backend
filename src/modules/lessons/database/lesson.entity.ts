@@ -1,7 +1,7 @@
 // src/modules/lessons/database/lesson.entity.ts
 
 import { Session } from '../../sessions/database/session.entity';
-import { Quiz } from '../../quizzes/database/quiz.entity'; // KẾT HỢP: Import Quiz entity
+import { Quiz } from '../../quizzes/database/quiz.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -13,44 +13,41 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-// GIỮ LẠI: Enum loại bài học rất hữu ích
+// 👇 CẬP NHẬT: Chỉ giữ 4 loại này (Viết Hoa chữ cái đầu)
 export enum LessonType {
   VIDEO = 'Video',
   TEXT = 'Text',
   QUIZ = 'Quiz',
+  ESSAY = 'Essay', // Loại mới cho Tự luận
 }
 
 @Entity('lessons')
 export class Lesson {
-  // GIỮ LẠI: Dùng UUID làm khóa chính rất tốt cho việc mở rộng sau này
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   title: string;
 
-  // GIỮ LẠI: Các thuộc tính chi tiết từ nhánh origin/Y
   @Column({ type: 'int', default: 0 })
-  duration: number; // Thời lượng bài học tính bằng giây
+  duration: number;
 
   @Column({ type: 'int', default: 0 })
   order: number;
 
+  // Mặc định là VIDEO
   @Column({ type: 'enum', enum: LessonType, default: LessonType.VIDEO })
   type: LessonType;
 
-  // GIỮ LẠI: Mối quan hệ với Session có vẻ hợp lý hơn
   @ManyToOne(() => Session, (session) => session.lessons, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'session_id' })
   session: Session;
 
-  // KẾT HỢP: Thêm lại mối quan hệ với Quiz từ nhánh của bạn
   @OneToMany(() => Quiz, (quiz) => quiz.lesson)
   quizzes: Quiz[];
 
-  // GIỮ LẠI: Các cột thời gian là một practice tốt
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

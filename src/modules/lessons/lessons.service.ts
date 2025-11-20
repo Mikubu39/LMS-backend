@@ -20,15 +20,28 @@ export class LessonsService {
   async create(createLessonDto: CreateLessonDto): Promise<Lesson> {
     const { sessionId, ...rest } = createLessonDto;
 
-    const session = await this.sessionRepository.findOneBy({ id: sessionId });
+    const session = await this.sessionRepository.findOne({ 
+      where: { id: sessionId },
+      relations: ['lessons'] // Lấy luôn danh sách bài để đếm (hoặc query riêng)
+    });
+    
     if (!session) {
-      throw new NotFoundException(
-        `Không tìm thấy chương học với ID: ${sessionId}`,
-      );
+      throw new NotFoundException(`Không tìm thấy chương học với ID: ${sessionId}`);
     }
+
+    // 👇 TÍNH TOÁN ORDER TỰ ĐỘNG 👇
+    // Tìm bài học có order lớn nhất trong session này
+    const lastLesson = await this.lessonRepository.findOne({
+      where: { session: { id: sessionId } },
+      order: { order: 'DESC' } // Sắp xếp giảm dần để lấy cái lớn nhất
+    });
+
+    // Nếu có bài trước đó thì +1, nếu chưa có thì là 1
+    const newOrder = lastLesson ? lastLesson.order + 1 : 1;
 
     const newLesson = this.lessonRepository.create({
       ...rest,
+      order: newOrder, // ✅ Gán giá trị tự động
       session: session,
     });
 
@@ -36,7 +49,9 @@ export class LessonsService {
   }
 
   findAll(): Promise<Lesson[]> {
-    return this.lessonRepository.find();
+    return this.lessonRepository.find({
+      order: { order: 'ASC' } // <-- Thêm sắp xếp
+    });
   }
 
   // --- THAY ĐỔI Ở ĐÂY ---

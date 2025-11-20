@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, Index, CreateDateColumn, UpdateDateColumn} from 'typeorm';
 import { Lesson } from '../../lessons/database/lesson.entity';
 import { QuizResult } from './quiz-result.entity';
 import { QuizQuestionAssignment } from './quiz-question-assignment.entity'; 
@@ -22,12 +22,15 @@ export class Quiz {
   @JoinColumn({ name: 'lesson_id' })
   lesson: Lesson;
 
- 
-  
-  
   @OneToMany(() => QuizQuestionAssignment, (assignment) => assignment.quiz)
   questionAssignments: QuizQuestionAssignment[];
   
   @OneToMany(() => QuizResult, (result) => result.quiz)
   results: QuizResult[];
+
+  @CreateDateColumn({ name: 'created_at' }) // Bỏ 'type' đi
+  created_at: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' }) // Bỏ 'type' đi
+  updated_at: Date;
 }

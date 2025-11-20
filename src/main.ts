@@ -9,7 +9,7 @@ async function bootstrap() {
 
   // ✅ Bật CORS cho phép ReactJS gọi API
   app.enableCors({
-    origin: 'http://localhost:5173', // URL frontend của bạn
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true, // Cho phép cookie / token nếu có
