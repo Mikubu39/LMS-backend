@@ -40,7 +40,7 @@ export class Lesson {
   type: LessonType;
 
   @ManyToOne(() => Session, (session) => session.lessons, {
-    onDelete: 'CASCADE',
+   // onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'session_id' })
   session: Session;
