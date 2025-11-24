@@ -27,7 +27,9 @@ export class QuizzesService {
     return this.quizzesRepository.save(newQuiz);
   }
 
-
+  async findAll(): Promise<Quiz[]> {
+  return this.quizzesRepository.find();
+} 
   async assignQuizQuestions(
     quizId: string,
     assignDto: AssignQuestionDto,

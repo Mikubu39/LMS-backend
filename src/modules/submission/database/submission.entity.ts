@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from 'src/modules/auth/database/user.entity';
-
+import { LessonItem } from 'src/modules/lessons/database/lesson-item.entity';
 export enum SubmissionStatus {
   PENDING = 'pending',
   REVIEWED = 'reviewed',
@@ -24,12 +24,21 @@ export class Submission {
   @Column({ type: 'uuid' })
   studentId: string;
 
+  // 👇 THÊM CỘT NÀY (Quan trọng nhất)
+  @Column({ type: 'uuid' })
+  lessonItemId: string;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'studentId' })
   student: User;
 
+  // 👇 Link sang LessonItem để query ngược nếu cần
+  @ManyToOne(() => LessonItem)
+  @JoinColumn({ name: 'lessonItemId' })
+  lessonItem: LessonItem;
+
   @Column({ type: 'text' })
-  gitLink: string;
+  gitLink: string; // Hoặc đổi tên thành 'content' nếu muốn nộp cả text
 
   @Column({ type: 'text', nullable: true })
   description?: string;

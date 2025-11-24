@@ -29,7 +29,13 @@ export class QuizzesController {
   create(@Body() createQuizDto: CreateQuizDto) {
     return this.quizzesService.create(createQuizDto);
   }
-
+  @Get()
+@Roles(UserRole.ADMIN, UserRole.TEACHER)
+@UseGuards(RolesGuard)
+@ApiOperation({ summary: 'Lấy danh sách tất cả quiz' })
+findAll() {
+  return this.quizzesService.findAll(); 
+}
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin chi tiết một bài quiz (và các câu hỏi của nó)' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {

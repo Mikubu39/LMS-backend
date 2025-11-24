@@ -1,7 +1,5 @@
-// src/modules/lessons/database/lesson.entity.ts
-
 import { Session } from '../../sessions/database/session.entity';
-import { Quiz } from '../../quizzes/database/quiz.entity';
+import { LessonItem } from './lesson-item.entity'; // <-- Import mới
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -13,14 +11,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-// 👇 CẬP NHẬT: Chỉ giữ 4 loại này (Viết Hoa chữ cái đầu)
-export enum LessonType {
-  VIDEO = 'Video',
-  TEXT = 'Text',
-  QUIZ = 'Quiz',
-  ESSAY = 'Essay', // Loại mới cho Tự luận
-}
-
 @Entity('lessons')
 export class Lesson {
   @PrimaryGeneratedColumn('uuid')
@@ -30,23 +20,26 @@ export class Lesson {
   title: string;
 
   @Column({ type: 'int', default: 0 })
-  duration: number;
+  duration: number; // Tổng thời lượng (tự tính hoặc nhập)
 
   @Column({ type: 'int', default: 0 })
   order: number;
 
-  // Mặc định là VIDEO
-  @Column({ type: 'enum', enum: LessonType, default: LessonType.VIDEO })
-  type: LessonType;
+  // ❌ ĐÃ XÓA CỘT TYPE Ở ĐÂY
 
   @ManyToOne(() => Session, (session) => session.lessons, {
-   // onDelete: 'CASCADE',
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'session_id' })
   session: Session;
 
-  @OneToMany(() => Quiz, (quiz) => quiz.lesson)
-  quizzes: Quiz[];
+  // 👇 QUAN HỆ MỚI
+  @OneToMany(() => LessonItem, (item) => item.lesson)
+  items: LessonItem[];
+
+  // ❌ NẾU CÓ QUAN HỆ QUIZ Ở ĐÂY THÌ XÓA LUÔN (vì quiz giờ link qua items)
+  // @OneToMany(() => Quiz, (quiz) => quiz.lesson)
+  // quizzes: Quiz[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

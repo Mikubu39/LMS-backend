@@ -41,17 +41,16 @@ export class SessionsService {
     return this.sessionRepository.save(newSession);
   }
 
-  findAll(): Promise<Session[]> {
-    return this.sessionRepository.find({ 
-      relations: ['course'],
-      order: { order: 'ASC' } // <-- Nên thêm sắp xếp mặc định
+  async findAll(): Promise<Session[]> {
+    return this.sessionRepository.find({
+      order: { order: 'ASC' },
+      relations: ['course', 'lessons', 'lessons.items'], // <-- QUAN TRỌNG: Lấy luôn cả lessons và items bên trong
     });
   }
-
   async findOne(id: string): Promise<Session> {
     const session = await this.sessionRepository.findOne({
       where: { id },
-      relations: ['course', 'lessons'], // <-- SỬA: Lấy thêm 'lessons' để biết session có bài gì
+      relations: ['course', 'lessons', 'lessons.items'], // <-- SỬA: Lấy thêm 'lessons' để biết session có bài gì
       order: {
         lessons: { order: 'ASC' } // Sắp xếp bài học bên trong
       }

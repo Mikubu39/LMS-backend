@@ -1,84 +1,104 @@
-// src/modules/lessons/lessons.service.ts
-
+// ✅ src/modules/lessons/lessons.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Session } from '../sessions/database/session.entity';
 import { Repository } from 'typeorm';
+import { Lesson } from './database/lesson.entity';
+import { Session } from '../sessions/database/session.entity';
+import { LessonItem } from './database/lesson-item.entity';
 import { CreateLessonDto } from './dtos/create-lesson.dto';
 import { UpdateLessonDto } from './dtos/update-lesson.dto';
-import { Lesson } from './database/lesson.entity';
+import { CreateLessonItemDto } from './dtos/create-lesson-item.dto';
+import { UpdateLessonItemDto } from './dtos/update-lesson-item.dto';
 
 @Injectable()
 export class LessonsService {
   constructor(
-    @InjectRepository(Lesson)
-    private readonly lessonRepository: Repository<Lesson>,
-    @InjectRepository(Session)
-    private readonly sessionRepository: Repository<Session>,
+    @InjectRepository(Lesson) private lessonRepo: Repository<Lesson>,
+    @InjectRepository(Session) private sessionRepo: Repository<Session>,
+    @InjectRepository(LessonItem) private itemRepo: Repository<LessonItem>,
   ) {}
 
   async create(createLessonDto: CreateLessonDto): Promise<Lesson> {
     const { sessionId, ...rest } = createLessonDto;
+    const session = await this.sessionRepo.findOneBy({ id: sessionId });
+    if (!session) throw new NotFoundException('Session not found');
 
-    const session = await this.sessionRepository.findOne({ 
-      where: { id: sessionId },
-      relations: ['lessons'] // Lấy luôn danh sách bài để đếm (hoặc query riêng)
-    });
-    
-    if (!session) {
-      throw new NotFoundException(`Không tìm thấy chương học với ID: ${sessionId}`);
-    }
-
-    // 👇 TÍNH TOÁN ORDER TỰ ĐỘNG 👇
-    // Tìm bài học có order lớn nhất trong session này
-    const lastLesson = await this.lessonRepository.findOne({
+    const lastLesson = await this.lessonRepo.findOne({
       where: { session: { id: sessionId } },
-      order: { order: 'DESC' } // Sắp xếp giảm dần để lấy cái lớn nhất
+      order: { order: 'DESC' },
     });
-
-    // Nếu có bài trước đó thì +1, nếu chưa có thì là 1
     const newOrder = lastLesson ? lastLesson.order + 1 : 1;
 
-    const newLesson = this.lessonRepository.create({
+    const lesson = this.lessonRepo.create({
       ...rest,
-      order: newOrder, // ✅ Gán giá trị tự động
-      session: session,
+      order: newOrder,
+      session,
     });
-
-    return this.lessonRepository.save(newLesson);
+    return this.lessonRepo.save(lesson);
   }
 
   findAll(): Promise<Lesson[]> {
-    return this.lessonRepository.find({
-      order: { order: 'ASC' } // <-- Thêm sắp xếp
+    // Thêm relation 'session' nếu cần lọc ở frontend (nhưng logic mới đã dùng session để load tree rồi)
+    return this.lessonRepo.find({ 
+      order: { order: 'ASC' },
+      relations: ['session'] 
     });
   }
 
-  // --- THAY ĐỔI Ở ĐÂY ---
   async findOne(id: string): Promise<Lesson> {
-    // <-- Đổi id: number thành id: string
-    const lesson = await this.lessonRepository.findOneBy({ id });
-    if (!lesson) {
-      throw new NotFoundException(`Không tìm thấy bài học với ID #${id}`);
-    }
+    const lesson = await this.lessonRepo.findOne({
+      where: { id },
+      relations: ['items'],
+      order: { items: { orderIndex: 'ASC' } },
+    });
+    if (!lesson) throw new NotFoundException(`Lesson #${id} not found`);
     return lesson;
   }
 
+  // 👇👇👇 KHÔI PHỤC LOGIC SỬA/XÓA 👇👇👇
+
   async update(id: string, updateLessonDto: UpdateLessonDto): Promise<Lesson> {
-    // <-- Đổi id: number thành id: string
-    const lesson = await this.lessonRepository.preload({
-      id: id,
-      ...updateLessonDto,
-    });
-    if (!lesson) {
-      throw new NotFoundException(`Không tìm thấy bài học với ID #${id}`);
-    }
-    return this.lessonRepository.save(lesson);
+    const lesson = await this.findOne(id);
+    // Loại bỏ sessionId khỏi updateDto nếu có, để tránh lỗi đổi session
+    const { ...rest } = updateLessonDto; 
+    Object.assign(lesson, rest);
+    return this.lessonRepo.save(lesson);
   }
 
-  async remove(id: string): Promise<Lesson> {
-    // <-- Đổi id: number thành id: string
-    const lesson = await this.findOne(id);
-    return this.lessonRepository.remove(lesson);
+  async remove(id: string): Promise<void> {
+    const result = await this.lessonRepo.delete(id);
+    if (result.affected === 0) throw new NotFoundException(`Lesson #${id} not found`);
+  }
+
+  // 👆👆👆 HẾT PHẦN KHÔI PHỤC 👆👆👆
+
+  // --- LOGIC ITEMS ---
+
+  async addItem(lessonId: string, dto: CreateLessonItemDto): Promise<LessonItem> {
+    const lesson = await this.lessonRepo.findOneBy({ id: lessonId });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+
+    const newItem = this.itemRepo.create({
+      ...dto,
+      lesson: lesson,
+      resource_quiz_id: dto.quizId,
+    });
+    return this.itemRepo.save(newItem);
+  }
+
+  async updateItem(itemId: string, dto: UpdateLessonItemDto): Promise<LessonItem> {
+    const item = await this.itemRepo.findOneBy({ id: itemId });
+    if (!item) throw new NotFoundException('Item not found');
+
+    const { quizId, ...rest } = dto;
+    Object.assign(item, rest);
+    if (quizId) item.resource_quiz_id = quizId;
+
+    return this.itemRepo.save(item);
+  }
+
+  async removeItem(itemId: string): Promise<void> {
+    const result = await this.itemRepo.delete(itemId);
+    if (result.affected === 0) throw new NotFoundException('Item not found');
   }
 }

@@ -1,10 +1,9 @@
-// src/app.module.ts
-
+// ✅ src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // GIỮ LẠI: Dùng biến môi trường là tốt nhất
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-// KẾT HỢP: Import tất cả các module từ cả hai nhánh
+// Import Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { CoursesModule } from './modules/courses/course.module';
@@ -12,19 +11,17 @@ import { SessionsModule } from './modules/sessions/sessions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { UploadModule } from './modules/upload/upload.module';
-import { QuestionsModule } from './modules/questions/questions.module'; // <-- THÊM
+import { QuestionsModule } from './modules/questions/questions.module';
 import { LessonVideoModule } from './modules/lesson-video/lesson-video.module'
-import {PostsModule} from './modules/posts/posts.module'
+import { PostsModule } from './modules/posts/posts.module'
 import { StudentModule } from './modules/student/student.module';
 import { SubmissionModule } from './modules/submission/submission.module';
+import { ClassesModule } from './modules/classes/classes.module'; // 👈 Đã import
+
 @Module({
   imports: [
-    // GIỮ LẠI: ConfigModule để load file .env
-    ConfigModule.forRoot({
-      isGlobal: true, 
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     
-    // KẾT HỢP: Dùng cấu hình TypeORM với process.env và cách load entity tự động
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST,
@@ -33,13 +30,16 @@ import { SubmissionModule } from './modules/submission/submission.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       
-      // GIỮ LẠI: Cách load entity tự động này tốt hơn
-      entities: [__dirname + '/**/*.entity{.ts,.js}'], 
+      // 🔴 SỬA TẠI ĐÂY: Xóa dòng entities: [...] cũ đi
+      // entities: [__dirname + '/**/*.entity{.ts,.js}'], <--- XÓA DÒNG NÀY
       
-      synchronize: true,
+      // 🟢 THAY BẰNG: Tự động load entity từ các module con
+      autoLoadEntities: true, 
+      
+      synchronize: true, // Tắt khi production
     }),
     
-    // KẾT HỢP: Thêm tất cả các module chức năng từ cả hai nhánh
+    // Các module chức năng
     AuthModule,
     QuizzesModule,
     CoursesModule,
@@ -51,7 +51,8 @@ import { SubmissionModule } from './modules/submission/submission.module';
     LessonVideoModule,
     PostsModule,
     StudentModule,
-    SubmissionModule
+    SubmissionModule,
+    ClassesModule // 👈 Đảm bảo module này nằm ở đây
   ],
 })
 export class AppModule {}

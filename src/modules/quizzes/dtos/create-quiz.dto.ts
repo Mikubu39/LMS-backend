@@ -5,10 +5,7 @@ export class CreateQuizDto {
   @ApiProperty() @IsNotEmpty() @IsString() title: string;
   @ApiProperty() @IsNotEmpty() @IsNumber() @Min(1) duration: number;
   
-  @ApiProperty({ description: 'ID (uuid) của bài học' }) 
-  @IsNotEmpty()
-  @IsUUID() 
-  lesson_id: string; 
+ 
 
   
 }

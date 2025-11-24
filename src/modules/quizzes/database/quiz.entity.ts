@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, Index, CreateDateColumn, UpdateDateColumn} from 'typeorm';
-import { Lesson } from '../../lessons/database/lesson.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { QuizResult } from './quiz-result.entity';
 import { QuizQuestionAssignment } from './quiz-question-assignment.entity'; 
 
@@ -12,15 +11,9 @@ export class Quiz {
   title: string;
 
   @Column()
-  duration: number; // Thời gian làm bài (phút)
+  duration: number; 
 
-  @Index()
-  @Column({ type: 'uuid' })
-  lesson_id: string;
-
-  @ManyToOne(() => Lesson, (lesson) => lesson.quizzes)
-  @JoinColumn({ name: 'lesson_id' })
-  lesson: Lesson;
+  // ❌ ĐÃ XÓA lesson_id VÀ quan hệ ManyToOne với Lesson
 
   @OneToMany(() => QuizQuestionAssignment, (assignment) => assignment.quiz)
   questionAssignments: QuizQuestionAssignment[];
@@ -28,9 +21,9 @@ export class Quiz {
   @OneToMany(() => QuizResult, (result) => result.quiz)
   results: QuizResult[];
 
-  @CreateDateColumn({ name: 'created_at' }) // Bỏ 'type' đi
+  @CreateDateColumn({ name: 'created_at' }) 
   created_at: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' }) // Bỏ 'type' đi
+  @UpdateDateColumn({ name: 'updated_at' }) 
   updated_at: Date;
 }
