@@ -1,4 +1,3 @@
-// src/modules/courses/course.controller.ts
 import {
   Controller,
   Get,
@@ -9,7 +8,6 @@ import {
   Delete,
   Query,
   UseGuards,
-  Request, // Import Request
 } from '@nestjs/common';
 import { CoursesService } from './course.service';
 import { CreateCourseDto } from './dtos/create-course.dto';
@@ -20,7 +18,6 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiQuery,
-  ApiParam,
 } from '@nestjs/swagger';
 import { Course } from './database/courses.entity';
 import { AuthGuard } from '@nestjs/passport';
@@ -40,9 +37,9 @@ export class CoursesController {
   @ApiOperation({ summary: 'Tạo một khóa học mới' })
   @ApiResponse({ status: 201, description: 'Tạo khóa học thành công.', type: Course })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
-  create(@Body() createCourseDto: CreateCourseDto, @Request() req) {
-    // Truyền user hiện tại (từ token) xuống service
-    return this.coursesService.create(createCourseDto, req.user);
+  create(@Body() createCourseDto: CreateCourseDto) {
+    // Đã bỏ @Request() req và tham số req.user
+    return this.coursesService.create(createCourseDto);
   }
 
   @Get()
@@ -73,5 +70,12 @@ export class CoursesController {
   @ApiOperation({ summary: 'Xóa một khóa học' })
   remove(@Param('id') id: string) {
     return this.coursesService.remove(id);
+  }
+
+  @Get(':id/full-structure')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT)
+  @ApiOperation({ summary: 'Lấy toàn bộ cấu trúc bài học (Session -> Lesson -> Items)' })
+  getFullStructure(@Param('id') id: string) {
+    return this.coursesService.findFullCurriculum(id);
   }
 }

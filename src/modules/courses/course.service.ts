@@ -1,98 +1,56 @@
-// src/modules/courses/course.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateCourseDto } from './dtos/create-course.dto';
 import { UpdateCourseDto } from './dtos/update-course.dto';
 import { Course } from './database/courses.entity';
-import { User } from '../auth/database/user.entity';
 
 @Injectable()
 export class CoursesService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    // Đã xóa UserRepository vì không còn dùng đến User nữa
   ) {}
 
   // 1. LOGIC TẠO KHÓA HỌC
-  async create(createCourseDto: CreateCourseDto, currentUser: User): Promise<Course> {
-    let instructor = currentUser; // Mặc định lấy người đang đăng nhập
-
-    // Nếu request có gửi ID giảng viên (Trường hợp Admin tạo hộ)
-    if (createCourseDto.instructorId) {
-      const foundInstructor = await this.userRepository.findOneBy({ 
-        user_id: createCourseDto.instructorId 
-      });
-      if (!foundInstructor) {
-        throw new NotFoundException('Không tìm thấy giảng viên với ID đã cung cấp');
-      }
-      instructor = foundInstructor;
-    }
-
-    // Loại bỏ instructorId khỏi DTO để tránh lỗi khi tạo Course
-    const { instructorId, ...courseData } = createCourseDto;
-
-    const course = this.courseRepository.create({
-      ...courseData,
-      instructor: instructor, // Gán object user vào
-    });
-
+  async create(createCourseDto: CreateCourseDto): Promise<Course> {
+    // Logic đơn giản hơn nhiều: chỉ tạo và lưu
+    const course = this.courseRepository.create(createCourseDto);
     return this.courseRepository.save(course);
   }
 
-  // 2. LOGIC LẤY DANH SÁCH (KÈM INFO GIẢNG VIÊN)
+  // 2. LOGIC LẤY DANH SÁCH
   findAll(paginationOptions: { page: number; limit: number }): Promise<Course[]> {
     const { page, limit } = paginationOptions;
     return this.courseRepository.find({
       take: limit,
       skip: (page - 1) * limit,
-      relations: ['instructor'], // Join bảng User
-      select: {
-        // Chỉ lấy thông tin cần thiết (Bảo mật)
-        instructor: {
-          user_id: true,
-          full_name: true,
-          avatar: true,
-          email: true,
-        },
-      },
+      // Đã xóa relations: ['instructor']
+      // Đã xóa select instructor
     });
   }
 
-  // 3. LOGIC LẤY CHI TIẾT (KÈM INFO GIẢNG VIÊN)
- // src/modules/courses/course.service.ts
-
-async findOne(id: string): Promise<Course> {
+  // 3. LOGIC LẤY CHI TIẾT
+  async findOne(id: string): Promise<Course> {
     const course = await this.courseRepository.findOne({
       where: { id },
       relations: [
-        'instructor', 
-        'sessions', 
-        'sessions.lessons'
+        // Đã xóa 'instructor'
+        'sessions',
+        'sessions.lessons',
       ],
-      // 👇 ĐÃ SỬA: Gộp chung vào một object 'sessions'
       order: {
         sessions: {
-          order: 'ASC',       // 1. Sắp xếp chương theo thứ tự
-          createdAt: 'ASC',   // 2. Nếu trùng order thì cái cũ lên trước
-          
-          // Sắp xếp bài học bên trong chương (Lồng vào trong này luôn)
+          order: 'ASC',
+          createdAt: 'ASC',
           lessons: {
             order: 'ASC',
             createdAt: 'ASC',
           },
         },
       },
-      select: {
-        instructor: {
-          user_id: true,
-          full_name: true,
-          avatar: true,
-          email: true,
-        },
-      },
+      // Đã xóa select instructor
     });
 
     if (!course) {
@@ -101,29 +59,17 @@ async findOne(id: string): Promise<Course> {
     return course;
   }
 
-  // 4. LOGIC UPDATE (CHO PHÉP ĐỔI GIẢNG VIÊN)
+  // 4. LOGIC UPDATE
   async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
-    const course = await this.findOne(id);
-
-    // Nếu muốn đổi giảng viên
-    if (updateCourseDto.instructorId) {
-       const newInstructor = await this.userRepository.findOneBy({ 
-         user_id: updateCourseDto.instructorId 
-       });
-       if (!newInstructor) {
-         throw new NotFoundException('Giảng viên mới không tồn tại');
-       }
-       course.instructor = newInstructor;
-    }
-
-    const { instructorId, ...courseData } = updateCourseDto;
-
-    // Preload dữ liệu mới vào entity cũ
+    // Không cần check instructorId, preload thẳng dữ liệu vào
     const updatedCourse = await this.courseRepository.preload({
       id: id,
-      ...courseData,
-      instructor: course.instructor
+      ...updateCourseDto,
     });
+
+    if (!updatedCourse) {
+      throw new NotFoundException(`Không tìm thấy khóa học với ID #${id}`);
+    }
 
     return this.courseRepository.save(updatedCourse);
   }
@@ -131,5 +77,35 @@ async findOne(id: string): Promise<Course> {
   async remove(id: string): Promise<Course> {
     const course = await this.findOne(id);
     return this.courseRepository.remove(course);
+  }
+
+  async findFullCurriculum(id: string) {
+    const course = await this.courseRepository.findOne({
+      where: { id },
+      relations: [
+        'sessions',
+        'sessions.lessons',
+        'sessions.lessons.items',
+      ],
+      order: {
+        sessions: {
+          order: 'ASC',
+          createdAt: 'ASC',
+          lessons: {
+            order: 'ASC',
+            createdAt: 'ASC',
+            items: {
+              orderIndex: 'ASC',
+            },
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Không tìm thấy khóa học #${id}`);
+    }
+
+    return course.sessions;
   }
 }

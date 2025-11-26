@@ -12,7 +12,8 @@ export class SubmissionResponseDto {
   reviewerId?: string;
   createdAt: Date;
   updatedAt: Date;
-
+  lessonItemId: string;
+  lessonItemTitle?: string;
   constructor(submission: any) {
     this.id = submission.id;
     this.studentId = submission.studentId;
@@ -26,6 +27,12 @@ export class SubmissionResponseDto {
     this.reviewerId = submission.reviewerId;
     this.createdAt = submission.createdAt;
     this.updatedAt = submission.updatedAt;
+    this.lessonItemId = submission.lessonItemId;
+    // Map thêm thông tin nếu relation lessonItem đã được load
+    if (submission.lessonItem) {
+        this.lessonItemTitle = submission.lessonItem.title || 'Bài tập không tên';
+    }
   }
 }
+
 

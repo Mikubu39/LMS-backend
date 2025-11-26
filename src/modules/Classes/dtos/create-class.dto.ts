@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsArray, IsUUID, IsDateString } from 'class-validator';
 import { ClassStatus } from '../database/class.entity';
 
 export class CreateClassDto {
@@ -11,17 +11,28 @@ export class CreateClassDto {
   @IsNotEmpty() @IsString()
   name: string;
 
-  @ApiProperty() @IsUUID()
-  course_id: string;
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  courseIds: string[];
 
-  @ApiProperty() @IsUUID()
-  teacher_id: string;
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  teacherIds: string[];
 
-  @ApiPropertyOptional() @IsOptional() @IsString()
-  schedule?: string;
+  // 👇 BỎ SCHEDULE, MAX_STUDENTS (Hoặc để optional nếu muốn giữ tương thích cũ)
+  
+  // 👇 THÊM NGÀY BẮT ĐẦU & KẾT THÚC
+  @ApiPropertyOptional({ example: '2025-10-20' }) 
+  @IsOptional() 
+  @IsDateString()
+  start_date?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1)
-  max_students?: number;
+  @ApiPropertyOptional({ example: '2026-01-20' }) 
+  @IsOptional() 
+  @IsDateString()
+  end_date?: string;
 
   @ApiPropertyOptional({ enum: ClassStatus }) 
   @IsOptional() @IsEnum(ClassStatus)

@@ -1,4 +1,3 @@
-// src/modules/courses/dtos/create-course.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
@@ -7,7 +6,6 @@ import {
   IsEnum,
   IsNumber,
   Min,
-  IsUUID,
 } from 'class-validator';
 import { CourseLevel } from '../database/courses.entity';
 
@@ -29,7 +27,6 @@ export class CreateCourseDto {
   @IsOptional()
   description?: string;
 
-  // --- MỚI: THUMBNAIL ---
   @ApiProperty({
     description: 'Link ảnh đại diện khóa học',
     required: false,
@@ -60,13 +57,5 @@ export class CreateCourseDto {
   @IsOptional()
   level?: CourseLevel;
 
-  // --- MỚI: CHỌN GIẢNG VIÊN (Dành cho Admin tạo hộ) ---
-  @ApiProperty({
-    description: 'ID giảng viên (Nếu trống sẽ lấy người đang đăng nhập)',
-    required: false,
-    example: 'uuid-user-id',
-  })
-  @IsUUID()
-  @IsOptional()
-  instructorId?: string;
+  // Đã xóa instructorId
 }

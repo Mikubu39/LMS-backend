@@ -195,10 +195,11 @@ export class QuizzesService {
 
   // Lưu kết quả
   const newResult = this.resultsRepository.create({
-    user_id: userId,
-    quiz_id: quizId,
-    score,
-  });
+      user_id: userId,
+      quiz_id: quizId,
+      lesson_item_id: submitQuizDto.lessonItemId, // 👈 LƯU THÊM CÁI NÀY
+      score,
+    });
   await this.resultsRepository.save(newResult);
 
   return {
@@ -209,5 +210,19 @@ export class QuizzesService {
     message: 'Quiz submitted successfully!',
   };
 }
-  
+
+async getResultsByQuizId(quizId: string, lessonItemId?: string) {
+    const whereCondition: any = { quiz_id: quizId };
+    
+    // Nếu có truyền lessonItemId thì lọc chính xác bài đó
+    if (lessonItemId) {
+      whereCondition.lesson_item_id = lessonItemId;
+    }
+
+    return this.resultsRepository.find({
+      where: whereCondition,
+      relations: ['user'], 
+      order: { score: 'DESC' }
+    });
+  }
 }

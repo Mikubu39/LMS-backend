@@ -62,6 +62,6 @@ export class User {
   hashed_refresh_token: string;
 
   // --- MỚI: DANH SÁCH KHÓA HỌC DO USER NÀY DẠY ---
-  @OneToMany(() => Course, (course) => course.instructor)
-  courses: Course[];
+ // @OneToMany(() => Course, (course) => course.instructor)
+  //courses: Course[];
 }

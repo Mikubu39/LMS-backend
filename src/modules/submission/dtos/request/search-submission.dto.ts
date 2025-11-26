@@ -31,5 +31,9 @@ export class SearchSubmissionDto {
   @Min(1)
   @Max(100)
   limit?: number = 10;
+
+  @IsOptional()
+  @IsString()
+  lessonItemId?: string; 
 }
 

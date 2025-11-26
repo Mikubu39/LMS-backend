@@ -25,7 +25,7 @@ export class Lesson {
   @Column({ type: 'int', default: 0 })
   order: number;
 
-  // ❌ ĐÃ XÓA CỘT TYPE Ở ĐÂY
+ 
 
   @ManyToOne(() => Session, (session) => session.lessons, {
     onDelete: 'CASCADE',

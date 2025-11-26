@@ -13,7 +13,7 @@ export class Quiz {
   @Column()
   duration: number; 
 
-  // ❌ ĐÃ XÓA lesson_id VÀ quan hệ ManyToOne với Lesson
+
 
   @OneToMany(() => QuizQuestionAssignment, (assignment) => assignment.quiz)
   questionAssignments: QuizQuestionAssignment[];

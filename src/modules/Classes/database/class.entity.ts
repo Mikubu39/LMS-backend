@@ -1,16 +1,17 @@
+// src/modules/classes/database/class.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany, // 👈 Import thêm
+  OneToMany,
+  ManyToMany, // 👈 Mới
+  JoinTable,  // 👈 Mới
 } from 'typeorm';
 import { Course } from '../../courses/database/courses.entity';
 import { User } from '../../auth/database/user.entity';
-import { Enrollment } from './enrollment.entity'; // 👈 Import Entity Enrollment
+import { Enrollment } from './enrollment.entity';
 
 export enum ClassStatus {
   PENDING = 'Pending',
@@ -30,8 +31,7 @@ export class Class {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
-  schedule: string;
+  
 
   @Column({ type: 'date', nullable: true })
   start_date: Date;
@@ -39,21 +39,21 @@ export class Class {
   @Column({ type: 'date', nullable: true })
   end_date: Date;
 
-  @Column({ type: 'int', default: 30 })
-  max_students: number;
+  
 
   @Column({ type: 'enum', enum: ClassStatus, default: ClassStatus.PENDING })
   status: ClassStatus;
 
-  @ManyToOne(() => Course, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'course_id' })
-  course: Course;
+  // 👇 THAY ĐỔI: Quan hệ nhiều - nhiều với Khóa học
+  @ManyToMany(() => Course)
+  @JoinTable({ name: 'class_courses' }) // Tên bảng phụ trong DB
+  courses: Course[];
 
-  @ManyToOne(() => User, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'teacher_id' })
-  teacher: User;
+  // 👇 THAY ĐỔI: Quan hệ nhiều - nhiều với Giảng viên
+  @ManyToMany(() => User)
+  @JoinTable({ name: 'class_teachers' }) // Tên bảng phụ trong DB
+  teachers: User[];
 
-  // 👇 THÊM QUAN HỆ NÀY ĐỂ ĐẾM SĨ SỐ
   @OneToMany(() => Enrollment, (enrollment) => enrollment.class)
   enrollments: Enrollment[];
 

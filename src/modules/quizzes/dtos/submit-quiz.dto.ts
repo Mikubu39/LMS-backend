@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, IsString, ValidateNested, IsUUID } from 'class-validator'; // <-- THÊM IsUUID
+import { IsArray, IsNotEmpty, IsNumber, IsString, ValidateNested, IsUUID,} from 'class-validator'; // <-- THÊM IsUUID
 import { Type } from 'class-transformer';
+import { IsOptional } from 'class-validator';
 
 class AnswerDto {
   @ApiProperty({ description: 'ID (uuid) của câu hỏi' })
@@ -12,6 +13,7 @@ class AnswerDto {
   @IsNotEmpty()
   @IsString()
   selected_answer: string;
+
 }
 
 export class SubmitQuizDto {
@@ -20,4 +22,9 @@ export class SubmitQuizDto {
   @ValidateNested({ each: true })
   @Type(() => AnswerDto)
   answers: AnswerDto[];
+
+  @ApiProperty({ description: 'ID của LessonItem đang làm bài', required: false })
+  @IsUUID()
+  @IsOptional()
+  lessonItemId?: string;
 }

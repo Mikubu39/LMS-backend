@@ -1,6 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from '../../auth/database/user.entity';
 import { Quiz } from './quiz.entity';
+// 👇 Import LessonItem
+import { LessonItem } from '../../lessons/database/lesson-item.entity';
 
 @Entity('quiz_results')
 export class QuizResult {
@@ -15,6 +17,11 @@ export class QuizResult {
   @Column()
   user_id: string;
   
+  // 👇 THÊM CỘT NÀY: Để biết kết quả này thuộc bài học nào
+  @Index()
+  @Column({ type: 'uuid', nullable: true }) 
+  lesson_item_id: string;
+
   @Column('decimal', { precision: 5, scale: 2 })
   score: number;
 
@@ -28,4 +35,9 @@ export class QuizResult {
   @ManyToOne(() => Quiz, (quiz) => quiz.results)
   @JoinColumn({ name: 'quiz_id' })
   quiz: Quiz;
+
+  // 👇 THÊM RELATION (Optional)
+  @ManyToOne(() => LessonItem)
+  @JoinColumn({ name: 'lesson_item_id' })
+  lessonItem: LessonItem;
 }

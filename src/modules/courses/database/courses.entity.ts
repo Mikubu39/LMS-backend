@@ -1,12 +1,8 @@
-// src/modules/courses/database/courses.entity.ts
 import { Session } from '../../sessions/database/session.entity';
-import { User } from 'src/modules/auth/database/user.entity'; // Import User
 import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -33,7 +29,6 @@ export class Course {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0 })
   price: number;
 
-  // --- MỚI: THUMBNAIL ---
   @Column({ nullable: true })
   thumbnail: string;
 
@@ -44,10 +39,7 @@ export class Course {
   })
   level: CourseLevel;
 
-  // --- MỚI: QUAN HỆ VỚI GIẢNG VIÊN ---
-  @ManyToOne(() => User, (user) => user.courses)
-  @JoinColumn({ name: 'instructor_id' })
-  instructor: User;
+  // Đã xóa quan hệ instructor tại đây
 
   @OneToMany(() => Session, (session) => session.course)
   sessions: Session[];

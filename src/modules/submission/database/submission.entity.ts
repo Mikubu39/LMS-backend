@@ -33,7 +33,7 @@ export class Submission {
   student: User;
 
   // 👇 Link sang LessonItem để query ngược nếu cần
-  @ManyToOne(() => LessonItem)
+  @ManyToOne(() => LessonItem, { onDelete: 'CASCADE' }) // 👈 Thêm onDelete: CASCADE
   @JoinColumn({ name: 'lessonItemId' })
   lessonItem: LessonItem;
 
@@ -52,6 +52,9 @@ export class Submission {
 
   @Column({ type: 'text', nullable: true })
   feedback?: string;
+
+  @Column({ type: 'decimal', precision: 4, scale: 2, nullable: true })
+  score: number; 
 
   @Column({ type: 'uuid', nullable: true })
   reviewerId?: string;

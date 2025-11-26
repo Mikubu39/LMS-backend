@@ -1,5 +1,5 @@
 // src/modules/quizzes/quizzes.controller.ts
-import { Controller, Post, Body, Param, UseGuards, Get, Patch, Delete, ParseUUIDPipe, Put } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, Get, Patch, Delete, ParseUUIDPipe, Put, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { QuizzesService } from './quizzes.service';
 import { GetUser } from '../../shared/decorators/get-user.decorator';
@@ -100,5 +100,16 @@ findAll() {
   @ApiOperation({ summary: 'Gỡ một câu hỏi ra khỏi quiz (Admin, Teacher)' })
   unassignQuestion(@Param('assignmentId', ParseUUIDPipe) assignmentId: string) {
     return this.quizzesService.unassignQuestionFromQuiz(assignmentId);
+  }
+
+  @Get(':quizId/results') // API: GET /quizzes/:id/results
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Lấy danh sách kết quả làm bài của Quiz' })
+  async getQuizResults(
+    @Param('quizId', ParseUUIDPipe) quizId: string,
+    @Query('lessonItemId') lessonItemId?: string // Optional filter
+  ) {
+    return this.quizzesService.getResultsByQuizId(quizId);
   }
 }

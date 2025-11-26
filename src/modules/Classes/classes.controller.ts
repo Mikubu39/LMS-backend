@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
-  Request, // 👈 Import Request
+  Request, 
 } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dtos/create-class.dto';
@@ -39,7 +39,6 @@ export class ClassesController {
     summary: 'Lấy danh sách lớp (Admin thấy hết, Teacher thấy lớp mình)',
   })
   findAll(@Request() req) {
-    // 👇 Truyền user info xuống service để lọc
     return this.classesService.findAll(req.user);
   }
 
@@ -67,7 +66,7 @@ export class ClassesController {
     return this.classesService.remove(id);
   }
 
-  // --- API Học viên ---
+  
 
   @Post(':id/students')
   @ApiOperation({ summary: 'Thêm học viên vào lớp' })
@@ -84,7 +83,7 @@ export class ClassesController {
     return this.classesService.getStudentsByClass(classId);
   }
   @Delete(':classId/students/:studentId')
-  @Roles(UserRole.ADMIN, UserRole.TEACHER) // Admin hoặc Teacher của lớp mới được xóa
+  @Roles(UserRole.ADMIN, UserRole.TEACHER) 
   @ApiOperation({ summary: 'Xóa học viên khỏi lớp' })
   async removeStudent(
     @Param('classId') classId: string,
