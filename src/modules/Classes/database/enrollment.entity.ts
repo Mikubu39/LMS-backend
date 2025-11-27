@@ -17,8 +17,7 @@ export class Enrollment {
   @JoinColumn({ name: 'student_id' })
   student: User;
 
-  @Column({ type: 'float', default: 0 })
-  progress: number; // Tiến độ học tập (0 - 100%)
+ 
 
   @CreateDateColumn()
   joined_at: Date;
