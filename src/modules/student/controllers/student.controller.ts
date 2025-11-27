@@ -1,27 +1,6 @@
 // src/modules/users/controllers/student.controller.ts
-import {
-  Controller,
-  Get,
-  Post,
-  Patch, // <<< SỬA ĐỔI: Dùng Patch thay cho Put
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { StudentService } from '../services/student.service';
 import { CreateStudentDto } from '../dtos/request/create-student.dto';
 import { UpdateStudentDto } from '../dtos/request/update-student.dto';
@@ -33,30 +12,24 @@ import { PaginatedStudentsResponseDto } from '../dtos/response/paginated-student
 import { CreateStudentBulkDto } from '../dtos/request/create-student-bulk.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../shared/guard/roles.guard';
-import { Roles } from 'src/shared/decorators/roles.decorator';
-import type { AuthenticatedRequest } from '../../../shared//types';
+import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from 'src/constant/enum';
+import type { AuthenticatedRequest } from '../../../shared/types';
 
 @ApiTags('02. Users (Admin & Profile)')
-@Controller('users') 
+@Controller('users')
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
-  
-  @Post('admin') // <<< SỬA ĐỔI: Route gọn hơn
+  @Post('admin')
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Admin tạo user mới (student/teacher)' })
-  @ApiBody({
-    type: CreateStudentDto,
-    examples: {  },
-  })
-  @ApiResponse({ status: 201, description: 'Tạo user thành công', type: StudentResponseDto })
-  async create(
-    @Body() createStudentDto: CreateStudentDto,
-  ): Promise<StudentResponseDto> {
-    return this.studentService.create(createStudentDto);
+  @ApiBody({ type: CreateStudentDto })
+  @ApiResponse({ status: 201, type: StudentResponseDto })
+  create(@Body() dto: CreateStudentDto) {
+    return this.studentService.create(dto);
   }
 
   @Post('admin/bulk')
@@ -64,122 +37,77 @@ export class StudentController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Tạo hàng loạt sinh viên (Admin only)' })
-  @ApiBody({ type: CreateStudentBulkDto }) // Swagger sẽ hiện form nhập mảng
-  @ApiResponse({ status: 201, description: 'Hoàn tất quá trình tạo' })
-  async createBulk(@Body() bulkDto: CreateStudentBulkDto) {
-    return this.studentService.createBulk(bulkDto);
+  @ApiBody({ type: CreateStudentBulkDto })
+  createBulk(@Body() dto: CreateStudentBulkDto) {
+    return this.studentService.createBulk(dto);
   }
-  
-  @Get('admin') // <<< SỬA ĐỔI: Route gọn hơn
+
+  @Get('admin')
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Admin lấy danh sách users (tìm kiếm + phân trang)' })
-  @ApiQuery({ name: 'search', required: false, description: 'Tìm kiếm chung (email, tên, sđt)' }) // Cập nhật description
-  @ApiQuery({ name: 'email', required: false, description: 'Lọc theo email' })
-  @ApiQuery({ name: 'full_name', required: false, description: 'Lọc theo tên' }) // Thêm ApiQuery
-
-  // --- THÊM MỚI TẠI ĐÂY ---
-  @ApiQuery({ 
-    name: 'role', 
-    required: false, 
-    enum: UserRole, 
-    description: 'Lọc theo vai trò' 
-  })
-  // --- KẾT THÚC THÊM MỚI ---
-
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 }) // Thêm ApiQuery
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 }) // Thêm ApiQuery
-  @ApiResponse({ status: 200, type: PaginatedStudentsResponseDto })
-  async findAll(
-    @Query() searchDto: SearchStudentDto, // DTO này giờ đã chứa 'role'
-  ): Promise<PaginatedStudentsResponseDto> {
+  @ApiOperation({ summary: 'Admin lấy danh sách users' })
+  @ApiQuery({ name: 'search', required: false })
+  findAll(@Query() searchDto: SearchStudentDto) {
     return this.studentService.findAll(searchDto);
   }
 
-  @Get('admin/:id') // <<< SỬA ĐỔI: Route gọn hơn
+  @Get('admin/:id')
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Admin xem chi tiết một user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ status: 200, type: StudentResponseDto })
-  @ApiResponse({ status: 404, description: 'User không tồn tại' })
-  async findOne(@Param('id') id: string): Promise<StudentResponseDto> {
+  @ApiParam({ name: 'id' })
+  findOne(@Param('id') id: string) {
     return this.studentService.findOne(id);
   }
 
-  @Patch('admin/:id') // <<< SỬA ĐỔI: Dùng PATCH và route gọn hơn
+  @Patch('admin/:id')
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Admin cập nhật thông tin user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiBody({ type: UpdateStudentDto, /* ... */ })
-  @ApiResponse({ status: 200, type: StudentResponseDto })
-  async update(
-    @Param('id') id: string,
-    @Body() updateStudentDto: UpdateStudentDto,
-  ): Promise<StudentResponseDto> {
-    return this.studentService.update(id, updateStudentDto);
+  @ApiParam({ name: 'id' })
+  update(@Param('id') id: string, @Body() dto: UpdateStudentDto) {
+    return this.studentService.update(id, dto);
   }
 
-  @Delete('admin/:id') // <<< SỬA ĐỔI: Route gọn hơn
+  @Delete('admin/:id')
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Admin xóa một user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ status: 204, description: 'Xóa thành công' })
-  async delete(@Param('id') id: string): Promise<void> {
+  @ApiParam({ name: 'id' })
+  delete(@Param('id') id: string) {
     return this.studentService.delete(id);
   }
 
-  // ==================================================
-  // User: Quản lý Profile cá nhân (Prefix: /users/profile)
-  // ==================================================
-
-  @Get('profile/me') // <<< THÊM MỚI
+  // ===================== Profile =====================
+  @Get('profile/me')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Xem thông tin cá nhân (profile) của tôi' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin thành công', type: StudentResponseDto })
-  @ApiResponse({ status: 404, description: 'Người dùng không tồn tại' })
-  async getMyProfile(
-    @Request() req: AuthenticatedRequest,
-  ): Promise<StudentResponseDto> {
-    const userId = req.user!.user_id;
-    return this.studentService.findOne(userId); // Tái sử dụng hàm findOne
+  getMyProfile(@Request() req: AuthenticatedRequest) {
+    return this.studentService.findOne(req.user!.user_id);
   }
 
-  @Patch('profile/me') // <<< SỬA ĐỔI: Dùng PATCH và route 'profile/me'
+  @Patch('profile/me')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Cập nhật thông tin cá nhân (profile) của tôi' })
-  @ApiBody({ type: UpdateProfileDto, /* ... */ })
-  @ApiResponse({ status: 200, type: StudentResponseDto })
-  async updateProfile(
-    @Request() req: AuthenticatedRequest,
-    @Body() updateProfileDto: UpdateProfileDto,
-  ): Promise<StudentResponseDto> {
-    const userId = req.user!.user_id;
-    return this.studentService.updateProfile(userId, updateProfileDto);
+  updateProfile(@Request() req: AuthenticatedRequest, @Body() dto: UpdateProfileDto) {
+    return this.studentService.updateProfile(req.user!.user_id, dto);
   }
 
-  @Patch('profile/password') // <<< SỬA ĐỔI: Dùng PATCH
+  @Patch('profile/password')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
+  changePassword(@Request() req: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
+    return this.studentService.changePassword(req.user!.user_id, dto);
+  }
+
+  // ✅ Lấy danh sách khóa học của học viên
+  @Get('profile/me/courses')
+  @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Tự đổi mật khẩu' })
-  @ApiBody({ type: ChangePasswordDto, /* ... */ })
-  @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công' })
-  @ApiResponse({ status: 400, description: 'Mật khẩu hiện tại không đúng' })
-  async changePassword(
-    @Request() req: AuthenticatedRequest,
-    @Body() changePasswordDto: ChangePasswordDto,
-  ): Promise<{ message: string }> {
-    const userId = req.user!.user_id;
-    return this.studentService.changePassword(userId, changePasswordDto);
+  getMyCourses(@Request() req: AuthenticatedRequest) {
+    return this.studentService.getCoursesOfStudent(req.user!.user_id);
   }
 }
