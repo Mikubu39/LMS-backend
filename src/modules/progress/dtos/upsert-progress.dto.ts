@@ -1,12 +1,32 @@
-import { IsInt, IsOptional, IsEnum, Min, Max, IsUUID} from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+  IsUUID,
+} from 'class-validator';
 import { LessonStatus } from '../database/lesson-progress.entity';
 
 export class UpsertLessonProgressDto {
-  @IsUUID() // Thay @IsInt() bằng @IsUUID()
-  courseId: string; // Thay number bằng string
+  @IsUUID()
+  userId: string;
 
-  @IsUUID() // Thay @IsInt() bằng @IsUUID()
-  lessonId: string; // Thay number bằng string
+  @IsUUID()
+  courseId: string;
+
+  @IsUUID()
+  sessionId: string;
+
+  @IsUUID()
+  lessonId: string;
+
+  @IsUUID()
+  lessonItemId: string;
+
+  @IsOptional()
+  @IsUUID()
+  classId?: string;
 
   @IsOptional()
   @IsEnum(LessonStatus)

@@ -11,14 +11,13 @@ export class ProgressController {
   @Post()
   @ApiOperation({ summary: 'Cập nhật/tạo mới tiến độ học' })
   @ApiBody({ type: UpsertLessonProgressDto })
-  async upsert(@Body('userId') userId: number, @Body() dto: UpsertLessonProgressDto) {
-    return this.service.upsert(Number(userId), dto);
+  async upsert(@Body() dto: UpsertLessonProgressDto) {
+    return this.service.upsert(dto);
   }
+
   @Get()
   @ApiOperation({ summary: 'Lấy tiến độ học' })
-  async get(@Query('userId') userId: number, @Query() q: QueryLessonProgressDto) {
-    return this.service.get(Number(userId), q);
+  async get(@Query() query: QueryLessonProgressDto) {
+    return this.service.get(query);
   }
 }
-
-

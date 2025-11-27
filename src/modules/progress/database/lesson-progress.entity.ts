@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  Unique,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { User } from 'src/modules/auth/database/user.entity';
 
 export enum LessonStatus {
@@ -7,24 +16,36 @@ export enum LessonStatus {
 }
 
 @Entity()
-@Unique(['userId', 'lessonId'])
+@Unique(['userId', 'lessonItemId', 'classId'])
 export class LessonProgress {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column()
-  userId: number;
+  @Column({ type: 'uuid' })
+  userId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column()
+  @Column({ type: 'uuid' })
   @Index()
-  courseId: string; 
+  courseId: string;
 
-  @Column()
+  @Column({ type: 'uuid' })
   @Index()
-  lessonId: string; 
+  sessionId: string;
+
+  @Column({ type: 'uuid' })
+  @Index()
+  lessonId: string;
+
+  @Column({ type: 'uuid' })
+  @Index()
+  lessonItemId: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  @Index()
+  classId: string;
 
   @Column({ type: 'enum', enum: LessonStatus, default: LessonStatus.IN_PROGRESS })
   status: LessonStatus;
