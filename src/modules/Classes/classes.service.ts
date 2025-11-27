@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm'; // 👈 Nhớ import In
+import { Repository, In } from 'typeorm';
 import { Class } from './database/class.entity';
 import { CreateClassDto } from './dtos/create-class.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
@@ -24,22 +24,30 @@ export class ClassesService {
     @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
   ) {}
 
-  // 1. CREATE
+  // 1. CREATE (ĐÃ SỬA)
   async create(dto: CreateClassDto): Promise<Class> {
-    // Tìm danh sách khóa học
-    const courses = await this.courseRepo.findBy({ 
-      id: In(dto.courseIds) 
-    });
-    if (courses.length !== dto.courseIds.length) {
-      throw new NotFoundException('Một số khóa học không tồn tại');
+    // Khởi tạo mảng rỗng để tránh lỗi undefined
+    let courses = [];
+    let teachers = [];
+
+    // 👇 CHỈ TÌM NẾU CÓ ID GỬI LÊN VÀ KHÔNG RỖNG
+    if (dto.courseIds && dto.courseIds.length > 0) {
+      courses = await this.courseRepo.findBy({ 
+        id: In(dto.courseIds) 
+      });
+      if (courses.length !== dto.courseIds.length) {
+        throw new NotFoundException('Một số khóa học không tồn tại');
+      }
     }
 
-    // Tìm danh sách giảng viên
-    const teachers = await this.userRepo.findBy({ 
-      user_id: In(dto.teacherIds) 
-    });
-    if (teachers.length !== dto.teacherIds.length) {
-      throw new NotFoundException('Một số giảng viên không tồn tại');
+    // 👇 TƯƠNG TỰ VỚI TEACHER
+    if (dto.teacherIds && dto.teacherIds.length > 0) {
+      teachers = await this.userRepo.findBy({ 
+        user_id: In(dto.teacherIds) 
+      });
+      if (teachers.length !== dto.teacherIds.length) {
+        throw new NotFoundException('Một số giảng viên không tồn tại');
+      }
     }
     
     // Check trùng mã lớp
@@ -49,78 +57,75 @@ export class ClassesService {
     // Lưu
     const newClass = this.classRepo.create({ 
       ...dto, 
-      courses, // TypeORM tự lưu vào bảng trung gian
+      courses, 
       teachers 
     });
     return this.classRepo.save(newClass);
   }
 
-  // 2. FIND ALL
+  // ... (Giữ nguyên các hàm findAll, findOne, update, remove...)
   async findAll(currentUser: any): Promise<any[]> {
     const query = this.classRepo.createQueryBuilder('class')
-      // Join bảng quan hệ nhiều-nhiều
       .leftJoinAndSelect('class.courses', 'courses')
       .leftJoinAndSelect('class.teachers', 'teachers')
       .loadRelationCountAndMap('class.total_students', 'class.enrollments')
       .orderBy('class.created_at', 'DESC');
 
-    // Nếu là TEACHER -> Chỉ lấy lớp mình có tên trong danh sách giáo viên
     if (currentUser.role === UserRole.TEACHER) {
-      // Logic: Tìm lớp mà trong danh sách teachers có ID của user hiện tại
       query.where('teachers.user_id = :teacherId', { teacherId: currentUser.user_id });
     }
-
     return query.getMany();
   }
 
-  // 3. FIND ONE
   async findOne(id: string): Promise<Class> {
     const classInfo = await this.classRepo.findOne({
       where: { class_id: id },
-      relations: ['courses', 'teachers'], // Load mảng courses và teachers
+      relations: ['courses', 'teachers'], 
     });
     if (!classInfo) throw new NotFoundException('Class not found');
     return classInfo;
   }
 
-  // 4. UPDATE
   async update(id: string, dto: UpdateClassDto): Promise<Class> {
     const existingClass = await this.classRepo.findOne({
         where: { class_id: id },
-        relations: ['courses', 'teachers'] // Cần load quan hệ lên để update
+        relations: ['courses', 'teachers'] 
     });
-
     if (!existingClass) throw new NotFoundException('Class not found');
 
-    // Cập nhật Courses (nếu có gửi lên)
+    // Logic update mảng quan hệ
     if (dto.courseIds) {
-      const courses = await this.courseRepo.findBy({ id: In(dto.courseIds) });
-      if (courses.length !== dto.courseIds.length) throw new NotFoundException('Khóa học không tồn tại');
-      existingClass.courses = courses;
+        if (dto.courseIds.length > 0) {
+            const courses = await this.courseRepo.findBy({ id: In(dto.courseIds) });
+            if (courses.length !== dto.courseIds.length) throw new NotFoundException('Khóa học không tồn tại');
+            existingClass.courses = courses;
+        } else {
+            existingClass.courses = []; // Xóa hết nếu gửi mảng rỗng
+        }
     }
 
-    // Cập nhật Teachers (nếu có gửi lên)
     if (dto.teacherIds) {
-      const teachers = await this.userRepo.findBy({ user_id: In(dto.teacherIds) });
-      if (teachers.length !== dto.teacherIds.length) throw new NotFoundException('Giảng viên không tồn tại');
-      existingClass.teachers = teachers;
+        if (dto.teacherIds.length > 0) {
+            const teachers = await this.userRepo.findBy({ user_id: In(dto.teacherIds) });
+            if (teachers.length !== dto.teacherIds.length) throw new NotFoundException('Giảng viên không tồn tại');
+            existingClass.teachers = teachers;
+        } else {
+            existingClass.teachers = [];
+        }
     }
 
-    // Merge các field đơn giản (name, status...)
     const { courseIds, teacherIds, ...simpleFields } = dto;
     Object.assign(existingClass, simpleFields);
 
     return this.classRepo.save(existingClass);
   }
 
-  // ... Các hàm remove, enrollment giữ nguyên ...
   async remove(id: string): Promise<void> {
     const result = await this.classRepo.delete(id);
     if (result.affected === 0) throw new NotFoundException('Class not found');
   }
 
   async addStudentToClass(classId: string, studentId: string) {
-    // Code cũ giữ nguyên
     const classInfo = await this.classRepo.findOneBy({ class_id: classId });
     if (!classInfo) throw new NotFoundException('Class not found');
 
@@ -140,7 +145,6 @@ export class ClassesService {
   }
 
   async getStudentsByClass(classId: string) {
-    // Code cũ giữ nguyên
     const enrollments = await this.enrollmentRepo.find({
       where: { class: { class_id: classId } },
       relations: ['student'],
@@ -163,7 +167,6 @@ export class ClassesService {
   }
 
   async removeStudentFromClass(classId: string, studentId: string): Promise<void> {
-    // Code cũ giữ nguyên
     const enrollment = await this.enrollmentRepo.findOne({
       where: { 
         class: { class_id: classId }, 

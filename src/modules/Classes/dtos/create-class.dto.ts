@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsArray, IsUUID, IsDateString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsArray, IsUUID, IsDateString } from 'class-validator';
 import { ClassStatus } from '../database/class.entity';
 
 export class CreateClassDto {
@@ -11,19 +11,19 @@ export class CreateClassDto {
   @IsNotEmpty() @IsString()
   name: string;
 
-  @ApiProperty({ type: [String] })
+  // 👇 SỬA: Thêm IsOptional
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  courseIds: string[];
+  courseIds?: string[]; 
 
-  @ApiProperty({ type: [String] })
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  teacherIds: string[];
+  teacherIds?: string[]; 
 
-  // 👇 BỎ SCHEDULE, MAX_STUDENTS (Hoặc để optional nếu muốn giữ tương thích cũ)
-  
-  // 👇 THÊM NGÀY BẮT ĐẦU & KẾT THÚC
   @ApiPropertyOptional({ example: '2025-10-20' }) 
   @IsOptional() 
   @IsDateString()
