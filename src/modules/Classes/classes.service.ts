@@ -157,6 +157,7 @@ export class ClassesService {
       phone: e.student.phone,
       address: e.student.address,
       gender: e.student.gender,
+      student_code: e.student.student_code,
       dateOfBirth: e.student.dateOfBirth,
     }));
   }

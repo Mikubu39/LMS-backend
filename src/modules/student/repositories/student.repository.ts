@@ -1,11 +1,11 @@
+// src/modules/users/repositories/student.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm'; // 👈 1. Thêm DeepPartial
 import { User } from 'src/modules/auth/database/user.entity';
-import { CreateStudentDto } from '../dtos/request/create-student.dto';
 import { UpdateStudentDto } from '../dtos/request/update-student.dto';
 import { SearchStudentDto } from '../dtos/request/search-student.dto';
-
+import { UserRole } from 'src/constant/enum';
 @Injectable()
 export class StudentRepository {
   constructor(
@@ -13,15 +13,16 @@ export class StudentRepository {
     private studentRepository: Repository<User>,
   ) {}
 
-  async create(createStudentDto: CreateStudentDto): Promise<User> {
-    const student = this.studentRepository.create(createStudentDto);
+  // 👇 2. Sửa dòng này: createStudentDto -> data: DeepPartial<User>
+  async create(data: DeepPartial<User>): Promise<User> {
+    const student = this.studentRepository.create(data);
     return this.studentRepository.save(student);
   }
 
+  // ... các hàm khác giữ nguyên
   async findAll(
     searchDto: SearchStudentDto,
   ): Promise<{ students: User[]; total: number }> {
-    // <<< SỬA ĐỔI: Thêm 'role' vào destructuring
     const { search, email, full_name, role, page = 1, limit = 10 } = searchDto;
     const skip = (page - 1) * limit;
 
@@ -46,12 +47,9 @@ export class StudentRepository {
       });
     }
 
-    // --- THÊM MỚI TẠI ĐÂY ---
     if (role) {
-      // Thêm điều kiện lọc theo vai trò
       queryBuilder.andWhere('student.role = :role', { role });
     }
-    // --- KẾT THÚC THÊM MỚI ---
 
     const [students, total] = await queryBuilder
       .skip(skip)
@@ -67,6 +65,26 @@ export class StudentRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     return this.studentRepository.findOne({ where: { email } });
+  }
+
+  async findByStudentCode(studentCode: string): Promise<User | null> {
+    return this.studentRepository.findOne({ where: { student_code: studentCode } });
+  }
+  
+  async findLastStudentCode(): Promise<string | null> {
+    // Cách cũ (Gây lỗi): findOne({ where: {}, ... }) -> TypeORM 0.3 không cho phép where rỗng.
+    
+    // Cách mới (An toàn): Dùng find() + take: 1
+    const students = await this.studentRepository.find({
+      where: { 
+        role: UserRole.STUDENT // Chỉ tìm những user là Student
+      },
+      order: { created_at: 'DESC' }, // Mới nhất lên đầu
+      take: 1, // Chỉ lấy 1 người
+      select: ['student_code'], 
+    });
+
+    return students[0]?.student_code || null;
   }
 
   async update(

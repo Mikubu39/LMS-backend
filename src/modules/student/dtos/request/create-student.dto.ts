@@ -15,6 +15,11 @@ export class CreateStudentDto {
   @IsEmail({}, { message: 'Email không hợp lệ' })
   email: string;
 
+  @ApiPropertyOptional({ example: 'SV001', description: 'Mã sinh viên (chỉ dành cho Student)' })
+  @IsOptional()
+  @IsString()
+  studentCode?: string;
+  
   @ApiProperty({ example: 'password123', description: 'Mật khẩu (tối thiểu 6 ký tự)', minLength: 6 })
   @IsString()
   @MinLength(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' })

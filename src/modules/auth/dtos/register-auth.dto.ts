@@ -8,6 +8,11 @@ export class RegisterAuthDto {
   @IsString()
   full_name: string;
 
+  @ApiProperty({ required: false, example: 'SV2024001', description: 'Mã sinh viên' })
+  @IsOptional()
+  @IsString()
+  studentCode?: string;
+  
   @ApiProperty({ example: 'test@example.com', description: 'Email duy nhất của người dùng' })
   @IsNotEmpty()
   @IsEmail()

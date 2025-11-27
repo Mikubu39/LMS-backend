@@ -30,6 +30,7 @@ import { ChangePasswordDto } from '../dtos/request/change-password.dto';
 import { SearchStudentDto } from '../dtos/request/search-student.dto';
 import { StudentResponseDto } from '../dtos/response/student-response.dto';
 import { PaginatedStudentsResponseDto } from '../dtos/response/paginated-students-response.dto';
+import { CreateStudentBulkDto } from '../dtos/request/create-student-bulk.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../shared/guard/roles.guard';
 import { Roles } from 'src/shared/decorators/roles.decorator';
@@ -37,14 +38,11 @@ import type { AuthenticatedRequest } from '../../../shared//types';
 import { UserRole } from 'src/constant/enum';
 
 @ApiTags('02. Users (Admin & Profile)')
-@Controller('users') // <<< SỬA ĐỔI: Thêm prefix chung 'users'
+@Controller('users') 
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
-  // =============================================
-  // Admin: Quản lý Users (Prefix: /users/admin)
-  // =============================================
-
+  
   @Post('admin') // <<< SỬA ĐỔI: Route gọn hơn
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -52,7 +50,7 @@ export class StudentController {
   @ApiOperation({ summary: 'Admin tạo user mới (student/teacher)' })
   @ApiBody({
     type: CreateStudentDto,
-    examples: { /* ... (giữ nguyên) ... */ },
+    examples: {  },
   })
   @ApiResponse({ status: 201, description: 'Tạo user thành công', type: StudentResponseDto })
   async create(
@@ -61,6 +59,17 @@ export class StudentController {
     return this.studentService.create(createStudentDto);
   }
 
+  @Post('admin/bulk')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Tạo hàng loạt sinh viên (Admin only)' })
+  @ApiBody({ type: CreateStudentBulkDto }) // Swagger sẽ hiện form nhập mảng
+  @ApiResponse({ status: 201, description: 'Hoàn tất quá trình tạo' })
+  async createBulk(@Body() bulkDto: CreateStudentBulkDto) {
+    return this.studentService.createBulk(bulkDto);
+  }
+  
   @Get('admin') // <<< SỬA ĐỔI: Route gọn hơn
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)

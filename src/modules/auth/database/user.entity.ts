@@ -1,20 +1,22 @@
 // src/modules/users/database/user.entity.ts
 import { Exclude } from 'class-transformer';
 import { UserRole } from 'src/constant/enum';
-import { Course } from '../../courses/database/courses.entity'; // Import Course
+
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   user_id: string;
+
+  @Column({ length: 20, nullable: true, unique: true })
+  student_code: string; // Mã sinh viên, nullable cho Admin/Teacher
 
   @Column({ length: 100 })
   full_name: string;
@@ -61,7 +63,7 @@ export class User {
   @Exclude()
   hashed_refresh_token: string;
 
-  // --- MỚI: DANH SÁCH KHÓA HỌC DO USER NÀY DẠY ---
+
  // @OneToMany(() => Course, (course) => course.instructor)
   //courses: Course[];
 }
