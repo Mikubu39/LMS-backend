@@ -10,35 +10,35 @@ export class CoursesService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
-    // Đã xóa UserRepository vì không còn dùng đến User nữa
   ) {}
 
-  // 1. LOGIC TẠO KHÓA HỌC
+  // 1. TẠO KHÓA HỌC
   async create(createCourseDto: CreateCourseDto): Promise<Course> {
-    // Logic đơn giản hơn nhiều: chỉ tạo và lưu
     const course = this.courseRepository.create(createCourseDto);
     return this.courseRepository.save(course);
   }
 
-  // 2. LOGIC LẤY DANH SÁCH
+  // 2. LẤY DANH SÁCH KHÓA HỌC (PHÂN TRANG)
   findAll(paginationOptions: { page: number; limit: number }): Promise<Course[]> {
     const { page, limit } = paginationOptions;
+
     return this.courseRepository.find({
       take: limit,
       skip: (page - 1) * limit,
-      // Đã xóa relations: ['instructor']
-      // Đã xóa select instructor
+      relations: ['classes'], // ⬅ KHÓA HỌC THUỘC NHỮNG LỚP NÀO
+      order: { createdAt: 'DESC' },
     });
   }
 
-  // 3. LOGIC LẤY CHI TIẾT
+  // 3. LẤY CHI TIẾT KHÓA HỌC
   async findOne(id: string): Promise<Course> {
     const course = await this.courseRepository.findOne({
       where: { id },
       relations: [
-        // Đã xóa 'instructor'
+        'classes',                  // ⬅ Lớp chứa khóa học
         'sessions',
         'sessions.lessons',
+        'sessions.lessons.items',
       ],
       order: {
         sessions: {
@@ -47,10 +47,12 @@ export class CoursesService {
           lessons: {
             order: 'ASC',
             createdAt: 'ASC',
+            items: {
+              orderIndex: 'ASC',
+            },
           },
         },
       },
-      // Đã xóa select instructor
     });
 
     if (!course) {
@@ -59,11 +61,10 @@ export class CoursesService {
     return course;
   }
 
-  // 4. LOGIC UPDATE
+  // 4. UPDATE
   async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
-    // Không cần check instructorId, preload thẳng dữ liệu vào
     const updatedCourse = await this.courseRepository.preload({
-      id: id,
+      id,
       ...updateCourseDto,
     });
 
@@ -74,11 +75,13 @@ export class CoursesService {
     return this.courseRepository.save(updatedCourse);
   }
 
+  // 5. XÓA KHÓA HỌC
   async remove(id: string): Promise<Course> {
     const course = await this.findOne(id);
     return this.courseRepository.remove(course);
   }
 
+  // 6. LẤY TOÀN BỘ CHƯƠNG TRÌNH HỌC (FULL CURRICULUM)
   async findFullCurriculum(id: string) {
     const course = await this.courseRepository.findOne({
       where: { id },

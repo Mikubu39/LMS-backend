@@ -6,7 +6,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  ManyToMany,
 } from 'typeorm';
+import { Class } from '../../classes/database/class.entity';
 
 export enum CourseLevel {
   BEGINNER = 'Beginner',
@@ -39,8 +41,11 @@ export class Course {
   })
   level: CourseLevel;
 
-  // Đã xóa quan hệ instructor tại đây
+  // Quan hệ ngược với Classes (để many-to-many hoạt động đúng)
+  @ManyToMany(() => Class, (cls) => cls.courses)
+  classes: Class[];
 
+  // Quan hệ Session (1 course có nhiều session)
   @OneToMany(() => Session, (session) => session.course)
   sessions: Session[];
 

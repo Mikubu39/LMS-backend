@@ -1,4 +1,3 @@
-// src/modules/classes/database/class.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,11 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
-  ManyToMany, // 👈 Mới
-  JoinTable,  // 👈 Mới
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Course } from '../../courses/database/courses.entity';
-import { User } from '../../auth/database/user.entity';
+import { User } from 'src/modules/auth/database/user.entity';
 import { Enrollment } from './enrollment.entity';
 
 export enum ClassStatus {
@@ -31,30 +30,27 @@ export class Class {
   @Column()
   name: string;
 
-  
-
   @Column({ type: 'date', nullable: true })
   start_date: Date;
 
   @Column({ type: 'date', nullable: true })
   end_date: Date;
 
-  
-
   @Column({ type: 'enum', enum: ClassStatus, default: ClassStatus.PENDING })
   status: ClassStatus;
 
-  // 👇 THAY ĐỔI: Quan hệ nhiều - nhiều với Khóa học
+  // Quan hệ nhiều-nhiều với Course
   @ManyToMany(() => Course)
-  @JoinTable({ name: 'class_courses' }) // Tên bảng phụ trong DB
+  @JoinTable({ name: 'class_courses' })
   courses: Course[];
 
-  // 👇 THAY ĐỔI: Quan hệ nhiều - nhiều với Giảng viên
+  // Quan hệ nhiều-nhiều với User (giáo viên)
   @ManyToMany(() => User)
-  @JoinTable({ name: 'class_teachers' }) // Tên bảng phụ trong DB
+  @JoinTable({ name: 'class_teachers' })
   teachers: User[];
 
-  @OneToMany(() => Enrollment, (enrollment) => enrollment.class)
+  // Quan hệ 1-nhiều với Enrollment
+  @OneToMany(() => Enrollment, enrollment => enrollment.class)
   enrollments: Enrollment[];
 
   @CreateDateColumn()
