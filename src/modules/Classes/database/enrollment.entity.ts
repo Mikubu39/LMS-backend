@@ -34,15 +34,11 @@ export class Enrollment {
   @JoinColumn({ name: 'student_id' })
   student: User;
 
-<<<<<<< HEAD
- 
-=======
   @RelationId((enrollment: Enrollment) => enrollment.student)
   student_id: string;
 
   @Column({ type: 'float', default: 0 })
   progress: number;
->>>>>>> origin/getCouse
 
   @CreateDateColumn()
   joined_at: Date;
