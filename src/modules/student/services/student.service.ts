@@ -6,6 +6,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as XLSX from 'xlsx';
+import { UserRole } from 'src/constant/enum';
 import { StudentRepository } from '../repositories/student.repository';
 import { CreateStudentDto } from '../dtos/request/create-student.dto';
 import { UpdateStudentDto } from '../dtos/request/update-student.dto';
@@ -130,5 +132,61 @@ export class StudentService {
     const unique = Array.from(new Map(courses.map(c => [c.id, c])).values());
 
     return new StudentCoursesResponseDto(unique);
+  }
+
+  async importStudents(file: Express.Multer.File) {
+    // 1. Đọc file từ buffer
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    
+    // 2. Lấy sheet đầu tiên
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    // 3. Convert sheet sang dạng JSON
+    const rawData = XLSX.utils.sheet_to_json(sheet);
+
+    const successList = [];
+    const errorList = [];
+
+    // 4. Duyệt qua từng dòng và tạo user
+    for (const [index, row] of rawData.entries()) {
+      const rowIndex = index + 2; // +2 vì index bắt đầu từ 0 và có 1 dòng header
+      
+      try {
+        // Map dữ liệu từ Excel sang DTO
+        // Giả sử file Excel có các cột: email, full_name, password, phone, gender...
+        const dto = new CreateStudentDto();
+        dto.email = row['email'];
+        dto.full_name = row['full_name'];
+        dto.password = row['password'] ? String(row['password']) : '123456'; // Mặc định nếu thiếu
+        dto.phone = row['phone'] ? String(row['phone']) : undefined;
+        dto.gender = row['gender'];
+        dto.address = row['address'];
+        dto.role = UserRole.STUDENT; // Mặc định import là Student
+
+        // Kiểm tra sơ bộ (Validate thủ công hoặc dùng class-validator nếu muốn chặt chẽ hơn)
+        if (!dto.email || !dto.full_name) {
+          throw new Error('Thiếu email hoặc họ tên');
+        }
+
+        // Gọi lại hàm create có sẵn để tận dụng logic hash pass + sinh mã SV
+        const newStudent = await this.create(dto);
+        successList.push(newStudent);
+
+      } catch (error) {
+        errorList.push({
+          row: rowIndex,
+          email: row['email'] || 'Unknown',
+          error: error.message || 'Lỗi không xác định',
+        });
+      }
+    }
+
+    return {
+      total: rawData.length,
+      success_count: successList.length,
+      failed_count: errorList.length,
+      errors: errorList, // Trả về danh sách lỗi để FE hiển thị
+    };
   }
 }

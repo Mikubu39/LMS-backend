@@ -40,9 +40,9 @@ export class Class {
   status: ClassStatus;
 
   // Quan hệ nhiều-nhiều với Course
-  @ManyToMany(() => Course)
-  @JoinTable({ name: 'class_courses' })
-  courses: Course[];
+  @ManyToMany(() => Course, (course) => course.classes) 
+@JoinTable({ name: 'class_courses' })
+courses: Course[];
 
   // Quan hệ nhiều-nhiều với User (giáo viên)
   @ManyToMany(() => User)

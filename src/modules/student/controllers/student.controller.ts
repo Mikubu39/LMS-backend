@@ -1,6 +1,7 @@
 // src/modules/users/controllers/student.controller.ts
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus, UseInterceptors, UploadedFile, BadRequestException} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { StudentService } from '../services/student.service';
 import { CreateStudentDto } from '../dtos/request/create-student.dto';
 import { UpdateStudentDto } from '../dtos/request/update-student.dto';
@@ -40,6 +41,37 @@ export class StudentController {
   @ApiBody({ type: CreateStudentBulkDto })
   createBulk(@Body() dto: CreateStudentBulkDto) {
     return this.studentService.createBulk(dto);
+  }
+
+  @Post('admin/import')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Import sinh viên từ file Excel (.xlsx)' })
+  @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file')) // 'file' là tên key trong form-data
+  async importStudents(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Vui lòng upload file Excel');
+    }
+    
+    // Kiểm tra định dạng file sơ bộ (optional)
+    if (!file.originalname.match(/\.(xlsx|xls|csv)$/)) {
+        throw new BadRequestException('Chỉ chấp nhận file excel (.xlsx, .xls)');
+    }
+
+    return this.studentService.importStudents(file);
   }
 
   @Get('admin')

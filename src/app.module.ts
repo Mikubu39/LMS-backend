@@ -16,7 +16,7 @@ import { LessonVideoModule } from './modules/lesson-video/lesson-video.module'
 import { PostsModule } from './modules/posts/posts.module'
 import { StudentModule } from './modules/student/student.module';
 import { SubmissionModule } from './modules/submission/submission.module';
-import { ClassesModule } from './modules/classes/classes.module'; // 👈 Đã import
+import { ClassesModule } from './modules/classes/classes.module'; 
 
 @Module({
   imports: [
@@ -42,6 +42,7 @@ import { ClassesModule } from './modules/classes/classes.module'; // 👈 Đã i
     // Các module chức năng
     AuthModule,
     QuizzesModule,
+    ClassesModule,
     CoursesModule,
     SessionsModule,
     LessonsModule,
@@ -52,7 +53,7 @@ import { ClassesModule } from './modules/classes/classes.module'; // 👈 Đã i
     PostsModule,
     StudentModule,
     SubmissionModule,
-    ClassesModule // 👈 Đảm bảo module này nằm ở đây
+    
   ],
 })
 export class AppModule {}

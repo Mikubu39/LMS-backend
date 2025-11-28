@@ -6,8 +6,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { Class } from './database/class.entity';
+import { Repository, In } from 'typeorm'; // [Cập nhật] Đảm bảo đã import In
+import { Class, ClassStatus } from './database/class.entity'; // [Cập nhật] Import thêm ClassStatus
 import { CreateClassDto } from './dtos/create-class.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
 import { Course } from '../courses/database/courses.entity';
@@ -24,13 +24,11 @@ export class ClassesService {
     @InjectRepository(Enrollment) private enrollmentRepo: Repository<Enrollment>,
   ) {}
 
-  // 1. CREATE (ĐÃ SỬA)
+  // 1. CREATE
   async create(dto: CreateClassDto): Promise<Class> {
-    // Khởi tạo mảng rỗng để tránh lỗi undefined
     let courses = [];
     let teachers = [];
 
-    // 👇 CHỈ TÌM NẾU CÓ ID GỬI LÊN VÀ KHÔNG RỖNG
     if (dto.courseIds && dto.courseIds.length > 0) {
       courses = await this.courseRepo.findBy({ 
         id: In(dto.courseIds) 
@@ -40,7 +38,6 @@ export class ClassesService {
       }
     }
 
-    // 👇 TƯƠNG TỰ VỚI TEACHER
     if (dto.teacherIds && dto.teacherIds.length > 0) {
       teachers = await this.userRepo.findBy({ 
         user_id: In(dto.teacherIds) 
@@ -50,11 +47,9 @@ export class ClassesService {
       }
     }
     
-    // Check trùng mã lớp
     const existing = await this.classRepo.findOneBy({ code: dto.code });
     if (existing) throw new BadRequestException(`Class Code '${dto.code}' already exists`);
 
-    // Lưu
     const newClass = this.classRepo.create({ 
       ...dto, 
       courses, 
@@ -63,7 +58,7 @@ export class ClassesService {
     return this.classRepo.save(newClass);
   }
 
-  // ... (Giữ nguyên các hàm findAll, findOne, update, remove...)
+  // 2. FIND ALL
   async findAll(currentUser: any): Promise<any[]> {
     const query = this.classRepo.createQueryBuilder('class')
       .leftJoinAndSelect('class.courses', 'courses')
@@ -77,6 +72,7 @@ export class ClassesService {
     return query.getMany();
   }
 
+  // 3. FIND ONE
   async findOne(id: string): Promise<Class> {
     const classInfo = await this.classRepo.findOne({
       where: { class_id: id },
@@ -86,6 +82,7 @@ export class ClassesService {
     return classInfo;
   }
 
+  // 4. UPDATE
   async update(id: string, dto: UpdateClassDto): Promise<Class> {
     const existingClass = await this.classRepo.findOne({
         where: { class_id: id },
@@ -93,14 +90,13 @@ export class ClassesService {
     });
     if (!existingClass) throw new NotFoundException('Class not found');
 
-    // Logic update mảng quan hệ
     if (dto.courseIds) {
         if (dto.courseIds.length > 0) {
             const courses = await this.courseRepo.findBy({ id: In(dto.courseIds) });
             if (courses.length !== dto.courseIds.length) throw new NotFoundException('Khóa học không tồn tại');
             existingClass.courses = courses;
         } else {
-            existingClass.courses = []; // Xóa hết nếu gửi mảng rỗng
+            existingClass.courses = []; 
         }
     }
 
@@ -120,29 +116,57 @@ export class ClassesService {
     return this.classRepo.save(existingClass);
   }
 
+  // 5. REMOVE
   async remove(id: string): Promise<void> {
     const result = await this.classRepo.delete(id);
     if (result.affected === 0) throw new NotFoundException('Class not found');
   }
 
+  // =================================================================
+  // 👇 [QUAN TRỌNG] PHẦN ĐÃ SỬA ĐỔI LOGIC TẠI ĐÂY
+  // =================================================================
   async addStudentToClass(classId: string, studentId: string) {
+    // 1. Kiểm tra lớp học tồn tại
     const classInfo = await this.classRepo.findOneBy({ class_id: classId });
     if (!classInfo) throw new NotFoundException('Class not found');
 
+    // 2. Kiểm tra học sinh tồn tại
     const student = await this.userRepo.findOneBy({ user_id: studentId });
     if (!student) throw new NotFoundException('Student not found');
 
-    const exists = await this.enrollmentRepo.findOne({
-      where: { class: { class_id: classId }, student: { user_id: studentId } }
+    // 3. [MỚI] Tìm xem học sinh này có đang trong bất kỳ lớp nào chưa kết thúc không?
+    // (Status là PENDING hoặc ACTIVE)
+    const busyEnrollment = await this.enrollmentRepo.findOne({
+      where: {
+        student: { user_id: studentId },
+        class: { 
+          status: In([ClassStatus.PENDING, ClassStatus.ACTIVE]) 
+        }
+      },
+      relations: ['class'], // Join bảng class để lấy status và tên lớp
     });
-    if (exists) throw new ConflictException('Student is already in this class');
 
+    // 4. Xử lý logic chặn
+    if (busyEnrollment) {
+        // Trường hợp 1: Đang học chính lớp này -> Báo đã tham gia
+        if (busyEnrollment.class.class_id === classId) {
+            throw new ConflictException('Học viên đã có trong lớp học này rồi');
+        }
+        
+        // Trường hợp 2: Đang học lớp khác -> Báo bận
+        throw new ConflictException(
+            `Học viên đang theo học lớp '${busyEnrollment.class.name}' (Trạng thái: ${busyEnrollment.class.status}). Không thể tham gia lớp mới lúc này.`
+        );
+    }
+
+    // 5. Nếu rảnh rỗi thì cho tạo mới
     const enrollment = this.enrollmentRepo.create({
       class: classInfo,
       student: student,
     });
     return this.enrollmentRepo.save(enrollment);
   }
+  // =================================================================
 
   async getStudentsByClass(classId: string) {
     const enrollments = await this.enrollmentRepo.find({
