@@ -38,24 +38,36 @@ export class StudentService {
   }
 
   async create(createStudentDto: CreateStudentDto): Promise<StudentResponseDto> {
+    // 1. Kiểm tra Email trùng
     if (await this.studentRepository.findByEmail(createStudentDto.email)) {
       throw new ConflictException('Email đã tồn tại');
     }
 
-    let studentCode = createStudentDto.studentCode;
-    if (studentCode) {
-      if (await this.studentRepository.findByStudentCode(studentCode)) {
-        throw new ConflictException('Mã sinh viên đã tồn tại');
+    
+    const role = createStudentDto.role || UserRole.STUDENT;
+    let studentCode = null;
+
+   
+    if (role === UserRole.STUDENT) {
+      if (createStudentDto.studentCode) {
+       
+        if (await this.studentRepository.findByStudentCode(createStudentDto.studentCode)) {
+          throw new ConflictException('Mã sinh viên đã tồn tại');
+        }
+        studentCode = createStudentDto.studentCode;
+      } else {
+        // Nếu không nhập, tự động sinh
+        studentCode = await this.generateStudentCode();
       }
-    } else {
-      studentCode = await this.generateStudentCode();
     }
+   
 
     const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
 
     const student = await this.studentRepository.create({
       ...createStudentDto,
-      student_code: studentCode,
+      role: role, 
+      student_code: studentCode, 
       password: hashedPassword,
     });
 
@@ -154,7 +166,6 @@ export class StudentService {
       
       try {
         // Map dữ liệu từ Excel sang DTO
-        // Giả sử file Excel có các cột: email, full_name, password, phone, gender...
         const dto = new CreateStudentDto();
         dto.email = row['email'];
         dto.full_name = row['full_name'];
@@ -164,12 +175,12 @@ export class StudentService {
         dto.address = row['address'];
         dto.role = UserRole.STUDENT; // Mặc định import là Student
 
-        // Kiểm tra sơ bộ (Validate thủ công hoặc dùng class-validator nếu muốn chặt chẽ hơn)
+        // Kiểm tra sơ bộ
         if (!dto.email || !dto.full_name) {
           throw new Error('Thiếu email hoặc họ tên');
         }
 
-        // Gọi lại hàm create có sẵn để tận dụng logic hash pass + sinh mã SV
+        // Gọi lại hàm create (đã sửa ở trên)
         const newStudent = await this.create(dto);
         successList.push(newStudent);
 
@@ -186,7 +197,7 @@ export class StudentService {
       total: rawData.length,
       success_count: successList.length,
       failed_count: errorList.length,
-      errors: errorList, // Trả về danh sách lỗi để FE hiển thị
+      errors: errorList,
     };
   }
 }
