@@ -1,19 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, IsString, ValidateNested, IsUUID,} from 'class-validator'; // <-- THÊM IsUUID
+import { IsArray, IsNotEmpty, ValidateNested, IsUUID, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsOptional } from 'class-validator';
 
 class AnswerDto {
   @ApiProperty({ description: 'ID (uuid) của câu hỏi' })
   @IsNotEmpty()
-  @IsUUID() // <-- SỬA
-  question_id: string; // <-- SỬA
+  @IsUUID()
+  question_id: string;
 
-  @ApiProperty({ description: "Đáp án được chọn, ví dụ: 'a'", example: 'a' })
+  // SỬA: Bỏ @IsString() để chấp nhận cả string, number, hoặc object (cho điền từ)
+  @ApiProperty({ 
+    description: "Đáp án người dùng chọn. Có thể là string (trắc nghiệm) hoặc object {index, answer} (điền từ)", 
+    example: "Đáp án A" 
+  })
   @IsNotEmpty()
-  @IsString()
-  selected_answer: string;
-
+  selected_answer: any; 
 }
 
 export class SubmitQuizDto {

@@ -1,23 +1,74 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray, IsBoolean, IsNumber } from 'class-validator';
 
-// DTO này gần giống CreateQuestionDto cũ, nhưng không có quiz_id
+import { QuestionType } from 'src/constant/enum';
+
+
+class MultiAnswerDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  answer: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  isCorrect: boolean;
+}
+
+
+class FillInBlankAnswerDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  answer: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsNumber()
+  index: number; 
+}
+
 export class CreateBankQuestionDto {
-  @ApiProperty() @IsNotEmpty() @IsString() question_text: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() category?: string;
-  @ApiProperty() @IsNotEmpty() @IsString() option_a: string;
-  @ApiProperty() @IsNotEmpty() @IsString() option_b: string;
-  @ApiProperty() @IsNotEmpty() @IsString() option_c: string;
-  @ApiProperty() @IsNotEmpty() @IsString() option_d: string;
-  @ApiProperty({ example: 'a' }) @IsNotEmpty() @IsString() @IsIn(['a', 'b', 'c', 'd']) correct_answer: string;
+  @ApiProperty() 
+  @IsNotEmpty() 
+  @IsString() 
+  question_text: string;
+
+  @ApiPropertyOptional() 
+  @IsOptional() 
+  @IsString() 
+  category?: string;
+
+  @ApiProperty({ enum: QuestionType, default: QuestionType.MULTIPLE_CHOICE })
+  @IsNotEmpty()
+  @IsEnum(QuestionType)
+  type: QuestionType;
+
+  
+  @ApiProperty({ 
+    description: 'Danh sách đáp án, cấu trúc phụ thuộc vào type',
+    example: [
+      { answer: 'Đáp án A', isCorrect: true },
+      { answer: 'Đáp án B', isCorrect: false }
+    ]
+  })
+  @IsArray()
+  @IsNotEmpty()
+  
+  answers: MultiAnswerDto[] | FillInBlankAnswerDto[];
 }
 
 export class UpdateBankQuestionDto {
   @ApiPropertyOptional() @IsOptional() @IsString() question_text?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() category?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() option_a?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() option_b?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() option_c?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() option_d?: string;
-  @ApiPropertyOptional({ example: 'a' }) @IsOptional() @IsString() @IsIn(['a', 'b', 'c', 'd']) correct_answer?: string;
+  
+  @ApiPropertyOptional({ enum: QuestionType }) 
+  @IsOptional() 
+  @IsEnum(QuestionType) 
+  type?: QuestionType;
+
+  @ApiPropertyOptional() 
+  @IsOptional() 
+  @IsArray()
+  answers?: any[];
 }

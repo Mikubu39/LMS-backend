@@ -1,16 +1,9 @@
 import { Controller, Post, Body, Get, Patch, Delete, Param, UseGuards, ParseUUIDPipe, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../shared/decorators/roles.decorator';
-import { UserRole } from 'src/constant/enum';
+import { UserRole } from 'src/constant/enum'; // Nhớ đường dẫn enum
 import { RolesGuard } from '../../shared/guard/roles.guard';
 import { CreateBankQuestionDto, UpdateBankQuestionDto } from './dtos/questions.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,32 +18,32 @@ export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Tạo câu hỏi mới vào ngân hàng' })
+  @ApiOperation({ summary: 'Tạo câu hỏi mới (Hỗ trợ nhiều loại câu hỏi)' })
   create(@Body() dto: CreateBankQuestionDto) {
     return this.questionsService.create(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Xem tất cả câu hỏi trong ngân hàng' })
+  @ApiOperation({ summary: 'Xem tất cả câu hỏi' })
   findAll() {
     return this.questionsService.findAll();
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Cập nhật một câu hỏi trong ngân hàng' })
+  @ApiOperation({ summary: 'Cập nhật câu hỏi' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBankQuestionDto) {
     return this.questionsService.update(id, dto);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Xóa một câu hỏi khỏi ngân hàng' })
+  @ApiOperation({ summary: 'Xóa câu hỏi' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.remove(id);
   }
 
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Import danh sách câu hỏi từ tệp Excel (.xlsx)' })
+  @ApiOperation({ summary: 'Import Excel (Tự động chuyển đổi sang format mới)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -59,27 +52,12 @@ export class QuestionsController {
         file: {
           type: 'string',
           format: 'binary',
-          description:
-            'Tệp Excel (.xlsx) chứa các cột: question_text, option_a, option_b, option_c, option_d, correct_answer, category (optional)',
+          description: 'Excel file: question_text, option_a...d, correct_answer',
         },
       },
-      required: ['file'],
     },
   })
-  @ApiResponse({
-    status: 201,
-    description: 'Import thành công',
-    schema: {
-      example: {
-        imported: 10,
-        errors: [],
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Tệp không hợp lệ hoặc dữ liệu trống',
-  })
+  @ApiResponse({ status: 201, description: 'Import thành công' })
   importFromExcel(@UploadedFile() file: Express.Multer.File) {
     return this.questionsService.importFromExcel(file);
   }

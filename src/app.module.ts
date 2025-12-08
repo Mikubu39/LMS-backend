@@ -17,7 +17,7 @@ import { PostsModule } from './modules/posts/posts.module'
 import { StudentModule } from './modules/student/student.module';
 import { SubmissionModule } from './modules/submission/submission.module';
 import { ClassesModule } from './modules/classes/classes.module'; 
-
+import { ChatModule } from './modules/chat/chat.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -53,7 +53,7 @@ import { ClassesModule } from './modules/classes/classes.module';
     PostsModule,
     StudentModule,
     SubmissionModule,
-    
+    ChatModule
   ],
 })
 export class AppModule {}

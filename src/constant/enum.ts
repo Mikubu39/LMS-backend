@@ -5,6 +5,11 @@ export enum UserRole {
   GUEST = 'guest',
 }
 
+export enum QuestionType {
+  MULTIPLE_CHOICE = 'MULTIPLE_CHOICE', // Trắc nghiệm 1 hoặc nhiều đáp án
+  FILL_IN_THE_BLANK = 'FILL_IN_THE_BLANK', // Điền từ
+}
+
 export enum UserGender {
   MALE,
   FEMALE,

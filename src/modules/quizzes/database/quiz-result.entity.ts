@@ -17,7 +17,7 @@ export class QuizResult {
   @Column()
   user_id: string;
   
-  // 👇 THÊM CỘT NÀY: Để biết kết quả này thuộc bài học nào
+  
   @Index()
   @Column({ type: 'uuid', nullable: true }) 
   lesson_item_id: string;
