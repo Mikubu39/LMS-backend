@@ -44,12 +44,16 @@ export class ProgressService {
       existing.lessonId = lessonId;
       existing.lessonItemId = lessonItemId;
       existing.classId = classId ?? null;
-      if (status) {
-        existing.status = status;
+      if (existing.status === LessonStatus.COMPLETED) {
+
+      } else {
+         if (status) existing.status = status;
       }
+     
       if (typeof percentage === 'number') {
-        existing.percentage = percentage;
+        existing.percentage = Math.max(existing.percentage, percentage);
       }
+
       if (typeof lastPosition === 'number') {
         existing.lastPosition = lastPosition;
       }

@@ -24,4 +24,7 @@ export class Message {
   @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
+
+  @Column({ default: false })
+  is_read: boolean
 }

@@ -18,6 +18,7 @@ import { StudentModule } from './modules/student/student.module';
 import { SubmissionModule } from './modules/submission/submission.module';
 import { ClassesModule } from './modules/classes/classes.module'; 
 import { ChatModule } from './modules/chat/chat.module';
+import { ProgressModule } from './modules/progress/progress.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -53,6 +54,7 @@ import { ChatModule } from './modules/chat/chat.module';
     PostsModule,
     StudentModule,
     SubmissionModule,
+    ProgressModule,
     ChatModule
   ],
 })

@@ -30,4 +30,7 @@ export class Conversation {
   @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  last_activity: Date;
 }
