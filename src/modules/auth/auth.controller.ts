@@ -1,9 +1,20 @@
-import {   Controller,   Post,   Body,   UseGuards,  HttpCode,   HttpStatus,  Request } from '@nestjs/common';
+// src/modules/auth/auth.controller.ts
+import { 
+  Controller, 
+  Post, 
+  Body, 
+  UseGuards, 
+  HttpCode, 
+  HttpStatus, 
+  Request 
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
-import {   ApiTags,   ApiOperation,   ApiResponse,   ApiBearerAuth } from '@nestjs/swagger';
+import { ChangePasswordDto } from './dtos/change-password.dto'; // Import DTO
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtRefreshGuard } from 'src/shared/guard/jwt-refresh.guard'; 
+import { AuthGuard } from '@nestjs/passport'; // Import AuthGuard chuẩn cho Access Token
 
 @ApiTags('01. Auth')
 @Controller('auth')
@@ -30,7 +41,6 @@ export class AuthController {
     return this.authService.login(loginAuthDto);
   }
 
-  
   @UseGuards(JwtRefreshGuard) 
   @Post('refresh')
   @ApiBearerAuth('JWT-auth') 
@@ -38,8 +48,20 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Trả về access_token mới.' })
   @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ.' })
   refreshToken(@Request() req) {
-   
     const user = req.user; 
     return this.authService.refreshToken(user);
+  }
+
+  // 👇 API ĐỔI MẬT KHẨU
+  @UseGuards(AuthGuard('jwt')) // Bắt buộc phải có Access Token
+  @Post('change-password')
+  @ApiBearerAuth('JWT-auth') // Hiển thị khóa trên Swagger
+  @ApiOperation({ summary: 'Đổi mật khẩu (Yêu cầu đăng nhập)' })
+  @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công.' })
+  @ApiResponse({ status: 400, description: 'Mật khẩu cũ không đúng.' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập.' })
+  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+    // req.user được lấy từ JwtStrategy.validate(), chứa thông tin user entity
+    return this.authService.changePassword(req.user.user_id, changePasswordDto);
   }
 }

@@ -1,18 +1,21 @@
+// src/modules/auth/auth.service.ts
 import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  NotFoundException,
+  BadRequestException, // Thêm import này
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './database/user.entity';
 import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto'; // Thêm import DTO
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config'; 
-import { UserRole } from 'src/constant/enum'
+import { UserRole } from 'src/constant/enum';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -23,23 +26,19 @@ export class AuthService {
   ) {}
 
   async register(registerAuthDto: RegisterAuthDto): Promise<User> {
-    const { email, password, full_name, phone, studentCode } = registerAuthDto; // 👈 Lấy studentCode
+    const { email, password, full_name, phone, studentCode } = registerAuthDto;
 
     const existingUser = await this.usersRepository.findOneBy({ email });
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
-    // 👇 LOGIC XỬ LÝ MÃ SINH VIÊN
-    // Mặc định đăng ký public là Student
     let finalStudentCode = studentCode;
 
     if (finalStudentCode) {
-       // Kiểm tra trùng
        const existingCode = await this.usersRepository.findOneBy({ student_code: finalStudentCode });
        if (existingCode) throw new ConflictException('Student code already exists');
     } else {
-       // (Tùy chọn) Nếu không gửi mã, tự động sinh: SV + timestamp
        const timestamp = Date.now().toString().slice(-6);
        finalStudentCode = `SV${timestamp}`;
     }
@@ -52,8 +51,8 @@ export class AuthService {
       password: hashedPassword,
       full_name,
       phone,
-      role: UserRole.STUDENT, // Mặc định là Student
-      student_code: finalStudentCode, // 👈 Lưu vào DB
+      role: UserRole.STUDENT,
+      student_code: finalStudentCode,
     });
 
     await this.usersRepository.save(newUser);
@@ -78,14 +77,11 @@ export class AuthService {
 
     const payload = { email: user.email, sub: user.user_id, role: user.role };
     
-  
     const [access_token, refresh_token] = await Promise.all([
-      // Access Token
       this.jwtService.sign(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
         expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
       }),
-      // Refresh Token
       this.jwtService.sign(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
@@ -101,10 +97,8 @@ export class AuthService {
 
     return { access_token, refresh_token };
   }
-
   
   async refreshToken(user: User): Promise<{ access_token: string }> {
-    
     const payload = { 
       email: user.email, 
       sub: user.user_id, 
@@ -117,5 +111,33 @@ export class AuthService {
     });
 
     return { access_token };
+  }
+
+  // 👇 HÀM ĐỔI MẬT KHẨU MỚI
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+    const { oldPassword, newPassword } = changePasswordDto;
+
+    // 1. Tìm user trong DB
+    const user = await this.usersRepository.findOneBy({ user_id: userId });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // 2. Kiểm tra mật khẩu cũ có khớp không
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Mật khẩu hiện tại không chính xác');
+    }
+
+    // 3. Kiểm tra trùng (Optional)
+    if (oldPassword === newPassword) {
+      throw new BadRequestException('Mật khẩu mới không được trùng với mật khẩu cũ');
+    }
+
+    // 4. Mã hóa mật khẩu mới và lưu
+    const salt = await bcrypt.genSalt();
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await this.usersRepository.save(user);
   }
 }

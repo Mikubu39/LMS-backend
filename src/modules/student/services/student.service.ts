@@ -146,41 +146,40 @@ export class StudentService {
     return new StudentCoursesResponseDto(unique);
   }
 
-  async importStudents(file: Express.Multer.File) {
-    // 1. Đọc file từ buffer
+  async importStudents(file: Express.Multer.File, targetRole: UserRole) { // 👈 Thêm tham số targetRole
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-    
-    // 2. Lấy sheet đầu tiên
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-
-    // 3. Convert sheet sang dạng JSON
     const rawData = XLSX.utils.sheet_to_json(sheet);
 
     const successList = [];
     const errorList = [];
 
-    // 4. Duyệt qua từng dòng và tạo user
     for (const [index, row] of rawData.entries()) {
-      const rowIndex = index + 2; // +2 vì index bắt đầu từ 0 và có 1 dòng header
+      const rowIndex = index + 2; 
       
       try {
-        // Map dữ liệu từ Excel sang DTO
         const dto = new CreateStudentDto();
+        // Mapping key từ Excel (Lưu ý: File Excel header phải là tiếng Anh: email, full_name, ...)
         dto.email = row['email'];
         dto.full_name = row['full_name'];
-        dto.password = row['password'] ? String(row['password']) : '123456'; // Mặc định nếu thiếu
+        dto.password = row['password'] ? String(row['password']) : '123456';
         dto.phone = row['phone'] ? String(row['phone']) : undefined;
         dto.gender = row['gender'];
         dto.address = row['address'];
-        dto.role = UserRole.STUDENT; // Mặc định import là Student
+        
+        // 👇 Dùng role được truyền vào thay vì hardcode
+        dto.role = targetRole; 
+        
+        // Nếu là Student và có cột student_code trong excel
+        if (targetRole === UserRole.STUDENT && row['student_code']) {
+             dto.studentCode = row['student_code'];
+        }
 
-        // Kiểm tra sơ bộ
         if (!dto.email || !dto.full_name) {
           throw new Error('Thiếu email hoặc họ tên');
         }
 
-        // Gọi lại hàm create (đã sửa ở trên)
         const newStudent = await this.create(dto);
         successList.push(newStudent);
 

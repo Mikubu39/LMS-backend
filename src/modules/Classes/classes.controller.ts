@@ -42,6 +42,13 @@ export class ClassesController {
     return this.classesService.findAll(req.user);
   }
 
+  @Get('my-enrollments')
+  @Roles(UserRole.STUDENT, UserRole.TEACHER, UserRole.ADMIN) // Cho phép Student truy cập
+  @ApiOperation({ summary: 'Lấy danh sách lớp đang học của user hiện tại' })
+  getMyEnrollments(@Request() req) {
+    return this.classesService.findMyClasses(req.user.user_id);
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @ApiOperation({ summary: 'Lấy chi tiết lớp học' })

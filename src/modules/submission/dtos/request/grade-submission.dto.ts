@@ -5,8 +5,9 @@ import { SubmissionStatus } from '../../database/submission.entity';
 
 export class GradeSubmissionDto {
   @ApiProperty({ enum: SubmissionStatus, description: 'Trạng thái bài nộp' })
+  @IsOptional() // <--- THÊM DÒNG NÀY: Để tránh lỗi nếu lỡ gửi thiếu status
   @IsEnum(SubmissionStatus)
-  status: SubmissionStatus;
+  status?: SubmissionStatus;
 
   @ApiPropertyOptional({ description: 'Điểm số (0-100)' })
   @IsOptional()

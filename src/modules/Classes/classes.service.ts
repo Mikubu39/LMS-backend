@@ -200,4 +200,30 @@ export class ClassesService {
     if (!enrollment) throw new NotFoundException('Học viên không có trong lớp này');
     await this.enrollmentRepo.remove(enrollment);
   }
+
+  async findMyClasses(userId: string) {
+    // 1. Tìm các enrollment của user này
+    const enrollments = await this.enrollmentRepo.find({
+      where: { student: { user_id: userId } },
+      relations: ['class', 'class.courses'], // Join để lấy thông tin Lớp và Khóa học
+    });
+
+    // 2. Flatten dữ liệu: { courseId, classId }
+    // Mục đích: Để Frontend dễ dàng map (Course A -> Class 1)
+    const result = [];
+    enrollments.forEach((enrol) => {
+      if (enrol.class && enrol.class.courses) {
+        enrol.class.courses.forEach((course) => {
+          result.push({
+            courseId: course.id,
+            classId: enrol.class.class_id,
+            className: enrol.class.name,
+            classStatus: enrol.class.status,
+          });
+        });
+      }
+    });
+
+    return result;
+  }
 }

@@ -10,6 +10,7 @@ export class SubmissionResponseDto {
   status: SubmissionStatus;
   feedback?: string;
   reviewerId?: string;
+  score?: number;
   createdAt: Date;
   updatedAt: Date;
   lessonItemId: string;
@@ -25,14 +26,13 @@ export class SubmissionResponseDto {
     this.status = submission.status;
     this.feedback = submission.feedback;
     this.reviewerId = submission.reviewerId;
+    this.score = submission.score;
     this.createdAt = submission.createdAt;
     this.updatedAt = submission.updatedAt;
     this.lessonItemId = submission.lessonItemId;
     // Map thêm thông tin nếu relation lessonItem đã được load
     if (submission.lessonItem) {
-        this.lessonItemTitle = submission.lessonItem.title || 'Bài tập không tên';
+      this.lessonItemTitle = submission.lessonItem.title || 'Bài tập không tên';
     }
   }
 }
-
-

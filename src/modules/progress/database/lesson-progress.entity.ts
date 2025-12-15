@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  JoinColumn
 } from 'typeorm';
 import { User } from 'src/modules/auth/database/user.entity';
 
@@ -25,6 +26,7 @@ export class LessonProgress {
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' }) // 👈 Thêm dòng này: Map relation vào cột userId ở trên
   user: User;
 
   @Column({ type: 'uuid' })

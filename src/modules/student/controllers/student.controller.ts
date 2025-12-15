@@ -47,31 +47,25 @@ export class StudentController {
   @Roles(UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Import sinh viên từ file Excel (.xlsx)' })
-  @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
+  @ApiOperation({ summary: 'Import user từ file Excel' })
+  @ApiConsumes('multipart/form-data')
+  @ApiQuery({ name: 'role', enum: UserRole, required: true, description: 'Role cần import (Student/Teacher)' }) // 👈 Thêm docs cho Swagger
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
+        file: { type: 'string', format: 'binary' },
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file')) // 'file' là tên key trong form-data
-  async importStudents(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('Vui lòng upload file Excel');
-    }
-    
-    // Kiểm tra định dạng file sơ bộ (optional)
-    if (!file.originalname.match(/\.(xlsx|xls|csv)$/)) {
-        throw new BadRequestException('Chỉ chấp nhận file excel (.xlsx, .xls)');
-    }
-
-    return this.studentService.importStudents(file);
+  @UseInterceptors(FileInterceptor('file'))
+  async importStudents(
+      @UploadedFile() file: Express.Multer.File,
+      @Query('role') role: UserRole = UserRole.STUDENT // 👈 Nhận query param
+  ) {
+    if (!file) throw new BadRequestException('Vui lòng upload file Excel');
+    // Gọi service với role
+    return this.studentService.importStudents(file, role);
   }
 
   @Get('admin')

@@ -87,7 +87,6 @@ export class SubmissionService {
     dto: GradeSubmissionDto,
     reviewerId: string,
   ): Promise<SubmissionResponseDto> {
-    // Tìm bài nộp bằng TypeOrm Repo chuẩn
     const submission = await this.submissionTypeOrmRepo.findOne({
       where: { id },
       relations: ['student', 'lessonItem'],
@@ -97,19 +96,24 @@ export class SubmissionService {
       throw new NotFoundException('Không tìm thấy bài nộp');
     }
 
-    // Cập nhật thông tin
-    submission.status = dto.status;
-    submission.score = dto.score;       // Lưu điểm
-    submission.feedback = dto.feedback; // Lưu nhận xét
-    submission.reviewerId = reviewerId; // Lưu người chấm
+    // Cập nhật thông tin (Dùng ?? để tránh lỗi nếu gửi thiếu trường)
+    if (dto.status) submission.status = dto.status;
+    
+    // Lưu ý: score có thể là 0 nên dùng ?? thay vì ||
+    if (dto.score !== undefined && dto.score !== null) {
+        submission.score = dto.score;
+    }
 
-    // Lưu vào DB
+    if (dto.feedback !== undefined) {
+        submission.feedback = dto.feedback;
+    }
+    
+    submission.reviewerId = reviewerId;
+
     const savedSubmission = await this.submissionTypeOrmRepo.save(submission);
 
     return new SubmissionResponseDto(savedSubmission);
   }
-
-  // --- 3. CÁC HÀM QUERY (Dùng Custom Repo cũ) ---
 
   async findAll(
     searchDto: SearchSubmissionDto,
