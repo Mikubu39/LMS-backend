@@ -12,13 +12,18 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { QuestionsModule } from './modules/questions/questions.module';
-import { LessonVideoModule } from './modules/lesson-video/lesson-video.module'
-import { PostsModule } from './modules/posts/posts.module'
+import { LessonVideoModule } from './modules/lesson-video/lesson-video.module';
+import { PostsModule } from './modules/posts/posts.module';
 import { StudentModule } from './modules/student/student.module';
 import { SubmissionModule } from './modules/submission/submission.module';
 import { ClassesModule } from './modules/classes/classes.module'; 
 import { ChatModule } from './modules/chat/chat.module';
 import { ProgressModule } from './modules/progress/progress.module';
+
+// 🔥 THÊM 2 MODULE MỚI
+import { TopicModule } from './modules/topic/topic.module';
+import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -30,14 +35,8 @@ import { ProgressModule } from './modules/progress/progress.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
-      
-      // 🔴 SỬA TẠI ĐÂY: Xóa dòng entities: [...] cũ đi
-      // entities: [__dirname + '/**/*.entity{.ts,.js}'], <--- XÓA DÒNG NÀY
-      
-      // 🟢 THAY BẰNG: Tự động load entity từ các module con
-      autoLoadEntities: true, 
-      
-      synchronize: true, // Tắt khi production
+      autoLoadEntities: true,
+      synchronize: true, // ❗ production nhớ tắt
     }),
     
     // Các module chức năng
@@ -55,7 +54,11 @@ import { ProgressModule } from './modules/progress/progress.module';
     StudentModule,
     SubmissionModule,
     ProgressModule,
-    ChatModule
+    ChatModule,
+
+    // ✅ Topic & Vocabulary
+    TopicModule,
+    VocabularyModule,
   ],
 })
 export class AppModule {}
