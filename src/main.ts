@@ -8,7 +8,9 @@ import { DataSource } from 'typeorm';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ Bật CORS cho phép ReactJS gọi API
+  // ==========================
+  // ✅ CORS
+  // ==========================
   app.enableCors({
     origin: ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -16,7 +18,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // ✅ Global validation
+  // ==========================
+  // ✅ GLOBAL VALIDATION
+  // ==========================
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -28,10 +32,10 @@ async function bootstrap() {
   // ==========================
   // ✅ SWAGGER
   // ==========================
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('LMS E-Learning API')
     .setDescription(
-      'Tài liệu API đầy đủ cho Hệ thống Học trực tuyến (LMS) – Kanji, Vocabulary, JLPT.',
+      'API cho hệ thống học tiếng Nhật – Topic, Vocabulary, Kanji, JLPT',
     )
     .setVersion('1.0')
     .addBearerAuth(
@@ -39,42 +43,45 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
         in: 'header',
       },
       'JWT-auth',
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document, {
-    swaggerOptions: {
-      tagsSorter: 'alpha',
-      operationsSorter: 'alpha',
-    },
-  });
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api-docs', app, document);
 
   // ==========================
-  // ✅ SEED DATABASE
+  // ✅ SEED DATABASE (SAFE)
   // ==========================
-  const dataSource = app.get(DataSource);
-
   if (process.env.SEED === 'true') {
+    const dataSource = app.get(DataSource);
+
+    if (!dataSource.isInitialized) {
+      await dataSource.initialize();
+    }
+
     console.log('🌱 Seeding database...');
 
+    // ❗ import động để tránh lỗi build
     const { seedKanji } = await import('./database/seed/kanji.seed');
     const { seedAll } = await import('./database/seed/full.seed');
 
-    await seedKanji(dataSource); // 2000 Kanji JLPT
-    await seedAll(dataSource);   // Topic + Vocabulary mẫu
+    await seedKanji(dataSource); // Kanji JLPT
+    await seedAll(dataSource);   // Topic + Vocabulary N5
 
     console.log('✅ Seed completed');
   }
 
-  await app.listen(3000);
-  console.log(`🚀 Server running at http://localhost:3000`);
-  console.log(`📘 Swagger docs at http://localhost:3000/api-docs`);
+  // ==========================
+  // ✅ START SERVER
+  // ==========================
+  const PORT = process.env.PORT || 3000;
+  await app.listen(PORT);
+
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📘 Swagger docs at http://localhost:${PORT}/api-docs`);
 }
 
 bootstrap();
