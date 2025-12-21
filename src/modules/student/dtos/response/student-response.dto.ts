@@ -13,11 +13,12 @@ export class StudentResponseDto {
   gender?: string;
   createdAt?: Date;
   updatedAt?: Date;
-
+  student_code?: string;
   constructor(student: any) {
     this.user_id = student.user_id;
     this.email = student.email;
     this.full_name = student.full_name;
+    this.student_code = student.student_code;
     this.phone = student.phone;
     this.address = student.address;
     this.avatar = student.avatar;
