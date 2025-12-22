@@ -5,7 +5,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
-  DeleteDateColumn,
+ 
 } from 'typeorm';
 import { Vocabulary } from '../../vocabulary/entity/vocabulary.entity';
 
@@ -20,14 +20,14 @@ export class Topic {
   @Column({ nullable: true })
   description: string;
 
-  // N5, N4, N3...
+
   @Column({ default: 'N5' })
   level: string;
 
   @OneToMany(
     () => Vocabulary,
     (vocabulary) => vocabulary.topic,
-    { cascade: true },
+    { cascade: true }, 
   )
   vocabularies: Vocabulary[];
 
@@ -37,7 +37,5 @@ export class Topic {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // ✅ Soft delete
-  @DeleteDateColumn()
-  deletedAt?: Date;
+  
 }

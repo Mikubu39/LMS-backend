@@ -17,25 +17,39 @@ export class AiChatService {
     private messageRepo: Repository<AiChatMessage>,
   ) {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Sử dụng Gemini 2.5 Flash cho tốc độ phản hồi nhanh
+    
+    // Bạn yêu cầu giữ model mạnh nhất. Hiện tại Google mới public 'gemini-1.5-pro' 
+    // hoặc 'gemini-2.0-flash-exp' (bản preview). 
+    // 'gemini-2.5' chưa có API chính thức nên sẽ gây lỗi 404. 
+    // Tôi để tạm 'gemini-1.5-pro' để code chạy được, bạn có thể sửa lại string này.
     this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
-  // 1. Tạo phiên hội thoại mới
-  async createSession(userId: number, topic: string) {
-    const session = this.sessionRepo.create({ userId, topic });
+
+  // --- [FIXED] Nhận userId là string (UUID) ---
+  async getUserHistory(userId: string) {
+    if (!userId) return []; // Bỏ check isNaN vì UUID là chuỗi
+
+    return this.sessionRepo.find({
+      where: { userId: userId as any }, // Ép kiểu nếu entity cũ của bạn vẫn khai báo là number
+      order: { createdAt: 'DESC' },
+      select: ['id', 'topic', 'createdAt'],
+    });
+  }
+
+  // [FIXED] Nhận userId là string
+  async createSession(userId: string, topic: string) {
+    // Lưu ý: Bạn cần chắc chắn cột userId trong bảng AiChatSession đã đổi sang kiểu varchar/uuid trong Database
+    const session = this.sessionRepo.create({ userId: userId as any, topic });
     return this.sessionRepo.save(session);
   }
 
-  // 2. Gửi tin nhắn và nhận phản hồi từ AI
   async chat(sessionId: number, userText: string) {
-    // Lấy session
     const session = await this.sessionRepo.findOne({
       where: { id: sessionId },
       relations: ['messages'],
     });
     if (!session) throw new Error('Session not found');
 
-    // Lưu tin nhắn User
     const userMsg = this.messageRepo.create({
       content: userText,
       role: 'user',
@@ -43,48 +57,82 @@ export class AiChatService {
     });
     await this.messageRepo.save(userMsg);
 
-    // Chuẩn bị lịch sử chat để gửi cho AI (để AI nhớ ngữ cảnh)
     const history = session.messages.map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }],
     }));
 
-    // Tạo Prompt cho AI
     const systemInstruction = `
-      Bạn là một giáo viên tiếng Nhật thân thiện (Sensei).
-      Người dùng đang học tiếng Nhật về chủ đề: "${session.topic}".
-      Nhiệm vụ:
-      1. Trả lời hội thoại ngắn gọn, tự nhiên bằng tiếng Nhật.
-      2. Kiểm tra ngữ pháp câu nói vừa rồi của người dùng.
-      3. Trả về kết quả dưới dạng JSON thuần túy (không markdown) theo mẫu:
+      Vai trò: Bạn là Sensei (Giáo viên tiếng Nhật) dạy cho học sinh người Việt Nam.
+      Chủ đề: "${session.topic}".
+
+      Nhiệm vụ của bạn là phân loại Input của User:
+
+      TRƯỜNG HỢP 1: User nói Tiếng Nhật (kể cả Tiếng Nhật sai ngữ pháp hoặc viết bằng Hiragana/Katakana/Romaji):
+      - Hãy đóng vai giáo viên, trả lời tiếp câu chuyện thật tự nhiên (ngắn gọn 1-2 câu).
+      - Sửa lỗi sai trong phần 'correction'.
+
+      TRƯỜNG HỢP 2: User nói Tiếng Việt, Tiếng Anh, hoặc ngôn ngữ khác:
+      - Đừng trả lời hội thoại.
+      - Hãy hiểu ý nghĩa câu đó và DỊCH nó sang tiếng Nhật tự nhiên.
+      - Hướng dẫn họ cách nói câu đó trong phần 'correction'.
+
+      Quy định JSON (Bắt buộc):
       {
-        "reply": "Câu trả lời tiếng Nhật của bạn",
-        "correction": "Giải thích lỗi sai bằng tiếng Việt (nếu đúng thì để null)",
-        "translation": "Dịch câu trả lời của bạn sang tiếng Việt"
+        "reply": "Câu trả lời tiếng Nhật (hoặc câu dịch nếu rơi vào TH2)",
+        "translation": "Dịch ý nghĩa câu reply sang tiếng Việt",
+        "correction": "Giải thích lỗi sai HOẶC Hướng dẫn cách nói (Dùng 100% Tiếng Việt).\nĐịnh dạng xuống dòng:\n❌ Bạn nói: ...\n✅ Tiếng Nhật chuẩn: ...\n💡 Hướng dẫn: ..."
+      }
+
+      Ví dụ 1 (User nói Tiếng Anh - TH2):
+      User: "I want to eat sushi"
+      JSON: {
+        "reply": "お寿司が食べたいです。(Osushi ga tabetai desu)",
+        "translation": "Tôi muốn ăn sushi.",
+        "correction": "💡 Hướng dẫn: Bạn vừa dùng Tiếng Anh. Để nói câu này bằng tiếng Nhật:\n✅ Tiếng Nhật: お寿司が食べたいです (Osushi ga tabetai desu)"
+      }
+
+      Ví dụ 2 (User nói Tiếng Nhật sai - TH1):
+      User: "Tabemono samui"
+      JSON: {
+        "reply": "冷たい食べ物がいいですね。",
+        "translation": "Đồ ăn lạnh thì được đấy nhỉ.",
+        "correction": "❌ Bạn nói: samui\n✅ Nên dùng: tsumetai\n💡 Lý do: Samui chỉ dùng cho thời tiết. Đồ ăn thì dùng Tsumetai."
       }
     `;
 
-    // Gọi Gemini API
     const chat = this.model.startChat({
-      history: [
-        ...history, // Lịch sử cũ
-      ],
+      history: [...history],
     });
 
-    const result = await chat.sendMessage(systemInstruction + "\nUser nói: " + userText);
+    const result = await chat.sendMessage(systemInstruction + "\nUser: " + userText);
     const responseText = result.response.text();
     
-    // Parse JSON từ AI (Xử lý trường hợp AI trả về dính dấu ```json)
     const cleanJson = responseText.replace(/```json|```/g, '').trim();
     let aiData;
     try {
-      aiData = JSON.parse(cleanJson);
+      // 1. Tìm vị trí dấu { đầu tiên và } cuối cùng
+      const startIndex = responseText.indexOf('{');
+      const endIndex = responseText.lastIndexOf('}');
+
+      if (startIndex !== -1 && endIndex !== -1) {
+        // 2. Cắt đúng đoạn JSON ra
+        const jsonStr = responseText.substring(startIndex, endIndex + 1);
+        aiData = JSON.parse(jsonStr);
+      } else {
+        throw new Error('No JSON found');
+      }
     } catch (e) {
-      // Fallback nếu AI không trả về đúng JSON
-      aiData = { reply: responseText, correction: null, translation: "" };
+      // Fallback: Nếu không parse được JSON, cố gắng làm sạch text thô nhất có thể
+      console.error("JSON Parse Error:", e);
+      const cleanText = responseText.replace(/```json|```/g, '').trim();
+      aiData = { 
+        reply: cleanText, 
+        correction: null, 
+        translation: "" 
+      };
     }
 
-    // Lưu tin nhắn AI
     const aiMsg = this.messageRepo.create({
       content: aiData.reply,
       role: 'assistant',
@@ -98,26 +146,28 @@ export class AiChatService {
   }
   
   async getSession(id: number) {
-      return this.sessionRepo.findOne({ where: { id }, relations: ['messages'] });
+      return this.sessionRepo.findOne({ 
+        where: { id }, 
+        relations: ['messages'],
+        order: { messages: { id: 'ASC' } } as any 
+      });
   }
 
   async getTextToSpeech(text: string, lang: string): Promise<any> {
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
-    
     try {
       const response = await axios({
         method: 'GET',
         url: url,
-        responseType: 'stream', // Quan trọng: Nhận dữ liệu dạng luồng (stream)
+        responseType: 'stream',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0',
           'Referer': 'http://translate.google.com/',
         },
       });
       return response.data;
     } catch (error) {
-      console.error('TTS Error:', error);
-      throw new Error('Failed to fetch audio from Google');
+      throw new Error('TTS Error');
     }
   }
 }

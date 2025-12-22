@@ -1,3 +1,4 @@
+// ai-chat.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToOne } from 'typeorm';
 
 @Entity()
@@ -5,11 +6,12 @@ export class AiChatSession {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  userId: number; // ID người dùng (giả lập)
+  // 👇 SỬA Ở ĐÂY: đổi number thành string để lưu UUID
+  @Column() 
+  userId: string; 
 
   @Column()
-  topic: string; // Chủ đề: Ví dụ "Đi mua sắm"
+  topic: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -18,22 +20,23 @@ export class AiChatSession {
   messages: AiChatMessage[];
 }
 
+// ... (Phần dưới giữ nguyên)
 @Entity()
 export class AiChatMessage {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'text' })
-  content: string; // Nội dung tin nhắn
+  content: string;
 
   @Column({ type: 'enum', enum: ['user', 'assistant'] })
   role: string;
 
   @Column({ type: 'text', nullable: true })
-  correction: string; // Phần sửa lỗi (nếu có)
+  correction: string;
 
   @Column({ type: 'text', nullable: true })
-  vietnameseTranslation: string; // Dịch nghĩa (AI trả về)
+  vietnameseTranslation: string;
 
   @ManyToOne(() => AiChatSession, (session) => session.messages)
   session: AiChatSession;

@@ -113,31 +113,5 @@ export class AuthService {
     return { access_token };
   }
 
-  // 👇 HÀM ĐỔI MẬT KHẨU MỚI
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
-    const { oldPassword, newPassword } = changePasswordDto;
-
-    // 1. Tìm user trong DB
-    const user = await this.usersRepository.findOneBy({ user_id: userId });
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    // 2. Kiểm tra mật khẩu cũ có khớp không
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) {
-      throw new BadRequestException('Mật khẩu hiện tại không chính xác');
-    }
-
-    // 3. Kiểm tra trùng (Optional)
-    if (oldPassword === newPassword) {
-      throw new BadRequestException('Mật khẩu mới không được trùng với mật khẩu cũ');
-    }
-
-    // 4. Mã hóa mật khẩu mới và lưu
-    const salt = await bcrypt.genSalt();
-    user.password = await bcrypt.hash(newPassword, salt);
-
-    await this.usersRepository.save(user);
-  }
+  
 }

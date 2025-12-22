@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,44 +17,31 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 import { TopicService } from './topic.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 
-import { JwtAuthGuard } from '../auth/auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+// Import các Guard và Enum từ hệ thống Shared
+import { RolesGuard } from '../../shared/guard/roles.guard'; // ⚠️ Hãy trỏ đúng đường dẫn
+import { Roles } from '../../shared/decorators/roles.decorator'; // ⚠️ Hãy trỏ đúng đường dẫn
+import { UserRole } from 'src/constant/enum'; // ⚠️ Enum UserRole
 
 @ApiTags('Topic')
+@ApiBearerAuth('JWT-auth') // Khớp với cấu hình Swagger
+@UseGuards(AuthGuard('jwt')) // Bảo vệ toàn bộ Controller
 @Controller('topics')
 export class TopicController {
-  constructor(
-    private readonly topicService: TopicService,
-  ) {}
+  constructor(private readonly topicService: TopicService) {}
 
-  // 🔍 LIST + SEARCH + PAGINATION (PUBLIC)
+  // 🔍 LIST + SEARCH + PAGINATION (Cho phép Teacher/Student xem)
   @Get()
-  @ApiOperation({
-    summary:
-      'Danh sách topic (search + phân trang)',
-  })
+  @ApiOperation({ summary: 'Danh sách topic (search + phân trang)' })
   @ApiQuery({ name: 'q', required: false })
-  @ApiQuery({
-    name: 'level',
-    required: false,
-    example: 'N5',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    example: 10,
-  })
+  @ApiQuery({ name: 'level', required: false, example: 'N5' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 10 })
   findAll(
     @Query('q') q?: string,
     @Query('level') level?: string,
@@ -68,64 +56,42 @@ export class TopicController {
     });
   }
 
-  // 🔎 DETAIL (PUBLIC)
+  // 🔎 DETAIL
   @Get(':id')
-  @ApiOperation({
-    summary: 'Chi tiết topic',
-  })
+  @ApiOperation({ summary: 'Chi tiết topic' })
   @ApiParam({ name: 'id' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.topicService.findOne(id);
   }
 
-  // ➕ CREATE (ADMIN)
+  // ➕ CREATE (ADMIN + TEACHER)
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(
-    JwtAuthGuard,
-    RolesGuard,
-  )
-  @Roles('ADMIN')
-  @ApiOperation({
-    summary: 'ADMIN tạo topic',
-  })
+  @Roles(UserRole.ADMIN, UserRole.TEACHER) // ✅ Phân quyền chuẩn
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Tạo topic (Admin, Teacher)' })
   create(@Body() dto: CreateTopicDto) {
     return this.topicService.create(dto);
   }
 
-  // ✏️ UPDATE (ADMIN)
+  // ✏️ UPDATE (ADMIN + TEACHER)
   @Put(':id')
-  @ApiBearerAuth()
-  @UseGuards(
-    JwtAuthGuard,
-    RolesGuard,
-  )
-  @Roles('ADMIN')
-  @ApiOperation({
-    summary: 'ADMIN cập nhật topic',
-  })
+  @Roles(UserRole.ADMIN, UserRole.TEACHER) // ✅ Phân quyền chuẩn
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Cập nhật topic (Admin, Teacher)' })
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTopicDto,
   ) {
-    return this.topicService.update(
-      id,
-      dto,
-    );
+    return this.topicService.update(id, dto);
   }
 
-  // 🧹 SOFT DELETE (ADMIN)
+  // 🧹 HARD DELETE (CHỈ ADMIN)
+  // Xóa cứng rất nguy hiểm nên chỉ để Admin
   @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(
-    JwtAuthGuard,
-    RolesGuard,
-  )
-  @Roles('ADMIN')
-  @ApiOperation({
-    summary: 'ADMIN xóa topic (soft)',
-  })
-  remove(@Param('id') id: string) {
+  @Roles(UserRole.ADMIN) 
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Xóa VĨNH VIỄN topic (Admin only)' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.topicService.remove(id);
   }
 }

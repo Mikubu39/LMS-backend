@@ -1,12 +1,15 @@
+// ai-chat.controller.ts
 import { Controller, Post, Body, Get, Param, Query, Res } from '@nestjs/common';
 import { AiChatService } from './ai-chat.service';
 import { Response } from 'express';
+
 @Controller('ai-chat')
 export class AiChatController {
   constructor(private readonly aiChatService: AiChatService) {}
 
   @Post('start')
-  startSession(@Body() body: { userId: number; topic: string }) {
+  // 👇 SỬA Ở ĐÂY: đổi number thành string
+  startSession(@Body() body: { userId: string; topic: string }) {
     return this.aiChatService.createSession(body.userId, body.topic);
   }
 
@@ -15,6 +18,11 @@ export class AiChatController {
     return this.aiChatService.chat(body.sessionId, body.message);
   }
   
+  @Get('history')
+  getHistory(@Query('userId') userId: string) {
+    return this.aiChatService.getUserHistory(userId);
+  }
+
   @Get('tts')
   async getAudio(
     @Query('text') text: string,
@@ -27,7 +35,7 @@ export class AiChatController {
         'Content-Type': 'audio/mpeg',
         'Transfer-Encoding': 'chunked',
       });
-      audioStream.pipe(res); // Truyền luồng âm thanh thẳng về cho Frontend
+      audioStream.pipe(res);
     } catch (error) {
       res.status(500).send('Error generating audio');
     }
@@ -37,6 +45,4 @@ export class AiChatController {
   getSession(@Param('id') id: string) {
       return this.aiChatService.getSession(+id);
   }
-
-  
 }

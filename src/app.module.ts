@@ -19,15 +19,13 @@ import { SubmissionModule } from './modules/submission/submission.module';
 import { ClassesModule } from './modules/classes/classes.module'; 
 import { ChatModule } from './modules/chat/chat.module';
 import { ProgressModule } from './modules/progress/progress.module';
-<<<<<<< HEAD
 import { AiChatModule } from './modules/ai-chat/ai-chat.module';
-=======
+import { Kanji } from './modules/kanji/database/kanji.entity';
 
-// 🔥 THÊM 2 MODULE MỚI
 import { TopicModule } from './modules/topic/topic.module';
 import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
+import { KanjiModule } from './modules/kanji/kanji.module';
 
->>>>>>> origin/N5
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -59,14 +57,10 @@ import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
     SubmissionModule,
     ProgressModule,
     ChatModule,
-<<<<<<< HEAD
     AiChatModule,
-=======
-
-    // ✅ Topic & Vocabulary
+    KanjiModule,
     TopicModule,
     VocabularyModule,
->>>>>>> origin/N5
   ],
 })
 export class AppModule {}

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Kanji } from 'src/modules/kanji/entity/kanji.entity';
+import { Kanji } from 'src/modules/kanji/database/kanji.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 

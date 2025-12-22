@@ -52,16 +52,5 @@ export class AuthController {
     return this.authService.refreshToken(user);
   }
 
-  // 👇 API ĐỔI MẬT KHẨU
-  @UseGuards(AuthGuard('jwt')) // Bắt buộc phải có Access Token
-  @Post('change-password')
-  @ApiBearerAuth('JWT-auth') // Hiển thị khóa trên Swagger
-  @ApiOperation({ summary: 'Đổi mật khẩu (Yêu cầu đăng nhập)' })
-  @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công.' })
-  @ApiResponse({ status: 400, description: 'Mật khẩu cũ không đúng.' })
-  @ApiResponse({ status: 401, description: 'Chưa đăng nhập.' })
-  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
-    // req.user được lấy từ JwtStrategy.validate(), chứa thông tin user entity
-    return this.authService.changePassword(req.user.user_id, changePasswordDto);
-  }
+ 
 }

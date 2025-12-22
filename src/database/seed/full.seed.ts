@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Topic } from '../../modules/topic/entity/topic.entity';
-import { Kanji } from '../../modules/kanji/entity/kanji.entity';
+import { Kanji } from '../../modules/kanji/database/kanji.entity';
 import { Vocabulary } from '../../modules/vocabulary/entity/vocabulary.entity';
 
 export async function seedAll(dataSource: DataSource) {

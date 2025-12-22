@@ -3,10 +3,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  ILike,
-} from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { Topic } from './entity/topic.entity';
 import { CreateTopicDto } from './dto/create-topic.dto';
@@ -32,42 +29,26 @@ export class TopicService {
     page?: number;
     limit?: number;
   }) {
-    const {
-      q,
-      level,
-      page = 1,
-      limit = 10,
-    } = params;
+    const { q, level, page = 1, limit = 10 } = params;
 
-    const query = this.topicRepo
-      .createQueryBuilder('topic')
-      .leftJoinAndSelect(
-        'topic.vocabularies',
-        'vocabularies',
-      )
-      .where('topic.deletedAt IS NULL');
+    const query = this.topicRepo.createQueryBuilder('topic');
+      // .leftJoinAndSelect('topic.vocabularies', 'vocabularies') // ❌ Đã bỏ dòng này để tối ưu performance
+      // .where('topic.deletedAt IS NULL'); // ❌ Không cần dòng này nữa vì đã xóa cứng
 
     if (q) {
-      query.andWhere(
-        'topic.name ILIKE :q',
-        { q: `%${q}%` },
-      );
+      query.andWhere('topic.name ILIKE :q', { q: `%${q}%` });
     }
 
     if (level) {
-      query.andWhere(
-        'topic.level = :level',
-        { level },
-      );
+      query.andWhere('topic.level = :level', { level });
     }
 
     query
-      .orderBy('topic.name', 'ASC')
+      .orderBy('topic.createdAt', 'DESC') // Sắp xếp mới nhất lên đầu
       .skip((page - 1) * limit)
       .take(limit);
 
-    const [data, total] =
-      await query.getManyAndCount();
+    const [data, total] = await query.getManyAndCount();
 
     return {
       data,
@@ -75,48 +56,43 @@ export class TopicService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(
-          total / limit,
-        ),
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
 
-  // 🔎 GET ONE
+  // 🔎 GET ONE (Có load vocabularies)
   async findOne(id: string) {
-    const topic =
-      await this.topicRepo.findOne({
-        where: { id },
-        relations: ['vocabularies'],
-      });
+    const topic = await this.topicRepo.findOne({
+      where: { id },
+      relations: ['vocabularies'], // Chỉ load vocabularies khi xem chi tiết
+    });
 
     if (!topic) {
-      throw new NotFoundException(
-        'Topic không tồn tại',
-      );
+      throw new NotFoundException('Topic không tồn tại');
     }
 
     return topic;
   }
 
   // ✏️ UPDATE
-  async update(
-    id: string,
-    dto: UpdateTopicDto,
-  ) {
+  async update(id: string, dto: UpdateTopicDto) {
     const topic = await this.findOne(id);
     Object.assign(topic, dto);
     return this.topicRepo.save(topic);
   }
 
-  // 🧹 SOFT DELETE
+  // 🧹 HARD DELETE (Xóa cứng)
   async remove(id: string) {
     const topic = await this.findOne(id);
-    await this.topicRepo.softRemove(topic);
+    
+    // Sử dụng remove() thay vì softRemove(). 
+    // Vì bên Entity Vocabulary bạn đã set { onDelete: 'CASCADE' } 
+    // nên toàn bộ vocabulary con sẽ tự động bị xóa theo.
+    await this.topicRepo.remove(topic);
 
     return {
-      message:
-        'Xóa topic (soft delete) thành công',
+      message: 'Đã xóa vĩnh viễn Topic và toàn bộ dữ liệu liên quan.',
     };
   }
 }
