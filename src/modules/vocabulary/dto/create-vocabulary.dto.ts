@@ -7,6 +7,12 @@ export class CreateVocabularyDto {
   @IsNotEmpty()
   word: string;
 
+
+  @ApiProperty({ example: 'じかん' })
+  @IsString()
+  @IsNotEmpty()
+  reading: string;
+  
   @ApiProperty({ example: 'Nhật Bản' })
   @IsString()
   @IsNotEmpty()

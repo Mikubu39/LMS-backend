@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  ParseArrayPipe
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -70,5 +71,16 @@ export class KanjiController {
   @ApiOperation({ summary: 'Xóa Kanji (Admin)' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.kanjiService.remove(id);
+  }
+
+  @Post('import')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN) 
+  @ApiOperation({ summary: 'Import hàng loạt Kanji (JSON Array)' })
+  importBulk(
+    @Body(new ParseArrayPipe({ items: CreateKanjiDto })) dtos: CreateKanjiDto[],
+  ) {
+    return this.kanjiService.importBulk(dtos);
   }
 }

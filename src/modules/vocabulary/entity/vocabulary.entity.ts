@@ -20,6 +20,9 @@ export class Vocabulary {
   @Column()
   word: string; 
 
+  @Column() 
+  reading: string;
+
   @Column()
   meaning: string; 
 

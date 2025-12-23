@@ -1,7 +1,7 @@
 // src/modules/kanji/kanji.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Kanji } from './database/kanji.entity';
 import { CreateKanjiDto } from './dtos/create-kanji.dto';
 
@@ -74,5 +74,31 @@ export class KanjiService {
   async remove(id: number) {
     const kanji = await this.findOne(id);
     return this.kanjiRepo.remove(kanji);
+  }
+
+  async importBulk(dtos: CreateKanjiDto[]) {
+    const results = [];
+    
+    // Duyệt qua từng phần tử trong mảng JSON gửi lên
+    for (const dto of dtos) {
+      // Kiểm tra xem chữ này có chưa (tránh trùng lặp)
+      let kanji = await this.kanjiRepo.findOne({ where: { kanji: dto.kanji } });
+
+      if (kanji) {
+        // Nếu có rồi -> Cập nhật
+        Object.assign(kanji, dto);
+      } else {
+        // Nếu chưa -> Tạo mới
+        kanji = this.kanjiRepo.create(dto);
+      }
+      
+      const saved = await this.kanjiRepo.save(kanji);
+      results.push(saved);
+    }
+
+    return {
+      message: `Đã xử lý ${results.length} chữ Kanji`,
+      data: results
+    };
   }
 }

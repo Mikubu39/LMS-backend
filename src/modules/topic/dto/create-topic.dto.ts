@@ -11,4 +11,9 @@ export class CreateTopicDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @ApiProperty({ example: 'N5', enum: ['N5', 'N4', 'N3', 'N2', 'N1'] })
+  @IsString()
+  @IsNotEmpty()
+  level: string;
 }

@@ -31,9 +31,8 @@ export class TopicService {
   }) {
     const { q, level, page = 1, limit = 10 } = params;
 
-    const query = this.topicRepo.createQueryBuilder('topic');
-      // .leftJoinAndSelect('topic.vocabularies', 'vocabularies') // ❌ Đã bỏ dòng này để tối ưu performance
-      // .where('topic.deletedAt IS NULL'); // ❌ Không cần dòng này nữa vì đã xóa cứng
+    const query = this.topicRepo.createQueryBuilder('topic')
+      .loadRelationCountAndMap('topic.vocabCount', 'topic.vocabularies');
 
     if (q) {
       query.andWhere('topic.name ILIKE :q', { q: `%${q}%` });
@@ -44,7 +43,7 @@ export class TopicService {
     }
 
     query
-      .orderBy('topic.createdAt', 'DESC') // Sắp xếp mới nhất lên đầu
+      .orderBy('topic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
