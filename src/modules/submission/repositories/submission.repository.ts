@@ -1,3 +1,4 @@
+// src/modules/submission/repositories/submission.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,27 +13,22 @@ export class SubmissionRepository {
     private submissionRepository: Repository<Submission>,
   ) {}
 
-  // Hàm create này có thể ít dùng vì service đã xử lý, nhưng cập nhật cho đồng bộ
-  async create(
-    createSubmissionDto: CreateSubmissionDto,
-    studentId: string,
-  ): Promise<Submission> {
+  async create(createSubmissionDto: CreateSubmissionDto, studentId: string): Promise<Submission> {
     const submission = this.submissionRepository.create({
-      ...createSubmissionDto, // Đã bao gồm classId từ DTO
+      ...createSubmissionDto,
       studentId,
     });
     return this.submissionRepository.save(submission);
   }
 
-  async findAll(
-    searchDto: SearchSubmissionDto,
-  ): Promise<{ submissions: Submission[]; total: number }> {
+  async findAll(searchDto: SearchSubmissionDto): Promise<{ submissions: Submission[]; total: number }> {
     const {
       search,
       studentId,
       gitLink,
       status,
-      classId, // 👈 Lấy tham số classId
+      classId,
+      lessonItemId, // 👈 1. PHẢI lấy lessonItemId ra ở đây
       page = 1,
       limit = 10,
     } = searchDto;
@@ -41,11 +37,14 @@ export class SubmissionRepository {
     const queryBuilder = this.submissionRepository
       .createQueryBuilder('submission')
       .leftJoinAndSelect('submission.student', 'student')
-      .leftJoinAndSelect('submission.class', 'class') // Join thêm Class để hiển thị
+      .leftJoinAndSelect('submission.class', 'class')
       .leftJoinAndSelect('submission.lessonItem', 'lessonItem');
 
+    // Dùng where(1=1) để các điều kiện andWhere phía sau luôn đúng logic
+    queryBuilder.where('1=1');
+
     if (search) {
-      queryBuilder.where(
+      queryBuilder.andWhere(
         '(submission.gitLink LIKE :search OR submission.description LIKE :search OR student.full_name LIKE :search OR student.email LIKE :search)',
         { search: `%${search}%` },
       );
@@ -55,15 +54,17 @@ export class SubmissionRepository {
       queryBuilder.andWhere('submission.studentId = :studentId', { studentId });
     }
 
-    // 👇 Filter theo Class
     if (classId) {
       queryBuilder.andWhere('submission.classId = :classId', { classId });
     }
 
+    // 👈 2. QUAN TRỌNG: Thêm điều kiện lọc đúng bài học
+    if (lessonItemId) {
+      queryBuilder.andWhere('submission.lessonItemId = :lessonItemId', { lessonItemId });
+    }
+
     if (gitLink) {
-      queryBuilder.andWhere('submission.gitLink LIKE :gitLink', {
-        gitLink: `%${gitLink}%`,
-      });
+      queryBuilder.andWhere('submission.gitLink LIKE :gitLink', { gitLink: `%${gitLink}%` });
     }
 
     if (status) {
@@ -83,7 +84,7 @@ export class SubmissionRepository {
     return this.submissionRepository.find({
       where: { studentId },
       order: { createdAt: 'DESC' },
-      relations: ['student', 'class', 'lessonItem'], // Load thêm class
+      relations: ['student', 'class', 'lessonItem'],
     });
   }
 }
