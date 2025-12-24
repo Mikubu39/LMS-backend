@@ -5,7 +5,7 @@ export class CreatePostDto {
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(255)
   title: string;
 
-  @ApiProperty() @IsString() @IsNotEmpty()
+  @ApiProperty() @IsString() @IsOptional() 
   slug: string;
 
   @ApiProperty() @IsString() @IsNotEmpty()

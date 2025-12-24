@@ -11,9 +11,9 @@ import { User } from './database/user.entity';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 
-// ✅ IMPORT GUARD
-import { JwtAuthGuard } from './auth.guard';
-import { RolesGuard } from './roles.guard';
+
+import { JwtAuthGuard } from '../../shared/guard/auth.guard';
+import { RolesGuard } from 'src/shared/guard/roles.guard';
 
 @Module({
   imports: [

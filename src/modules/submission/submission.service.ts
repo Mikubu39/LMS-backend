@@ -5,29 +5,31 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { SubmissionRepository } from '../repositories/submission.repository';
-import { Submission, SubmissionStatus } from '../database/submission.entity';
-import { LessonItem, LessonItemType } from '../../lessons/database/lesson-item.entity';
-import { CreateSubmissionDto } from '../dtos/request/create-submission.dto';
-import { SearchSubmissionDto } from '../dtos/request/search-submission.dto';
-import { SubmissionResponseDto } from '../dtos/response/submission-response.dto';
-import { PaginatedSubmissionsResponseDto } from '../dtos/response/paginated-submissions-response.dto';
-// 👇 Import DTO chấm điểm
-import { GradeSubmissionDto } from '../dtos/request/grade-submission.dto';
+import { Repository, IsNull } from 'typeorm';
+import { SubmissionRepository } from './repositories/submission.repository';
+import { Submission, SubmissionStatus } from './database/submission.entity';
+import { LessonItem, LessonItemType } from '../lessons/database/lesson-item.entity';
+import { CreateSubmissionDto } from './dtos/request/create-submission.dto';
+import { SearchSubmissionDto } from './dtos/request/search-submission.dto';
+import { SubmissionResponseDto } from './dtos/response/submission-response.dto';
+import { PaginatedSubmissionsResponseDto } from './dtos/response/paginated-submissions-response.dto';
+import { GradeSubmissionDto } from './dtos/request/grade-submission.dto';
+import { Class } from 'src/modules/classes/database/class.entity';
 
 @Injectable()
 export class SubmissionService {
   constructor(
-    // 1. Custom Repository: Dùng cho các query phức tạp (findAll, findByStudentId)
     private readonly submissionCustomRepo: SubmissionRepository,
 
-    // 2. Standard Repository: Dùng cho CRUD chuẩn (create, save, findOne, grade)
     @InjectRepository(Submission)
     private readonly submissionTypeOrmRepo: Repository<Submission>,
 
     @InjectRepository(LessonItem)
     private readonly lessonItemRepository: Repository<LessonItem>,
+
+    // 👇 Inject Class Repository nếu cần validate kỹ
+    @InjectRepository(Class)
+    private readonly classRepository: Repository<Class>,
   ) {}
 
   // --- 1. TẠO BÀI NỘP ---
@@ -35,9 +37,13 @@ export class SubmissionService {
     createSubmissionDto: CreateSubmissionDto,
     studentId: string,
   ): Promise<SubmissionResponseDto> {
-    const { lessonItemId, gitLink, description } = createSubmissionDto;
+    const { lessonItemId, classId, gitLink, description } = createSubmissionDto;
 
-    // Check bài tập
+    // 1. Check Class tồn tại
+    const classExists = await this.classRepository.findOneBy({ class_id: classId });
+    if (!classExists) throw new NotFoundException('Lớp học không tồn tại.');
+
+    // 2. Check bài tập
     const lessonItem = await this.lessonItemRepository.findOne({
       where: { id: lessonItemId },
     });
@@ -46,14 +52,18 @@ export class SubmissionService {
       throw new BadRequestException('Chỉ được nộp bài cho bài tập tự luận (Essay).');
     }
 
-    // Check bài cũ
+    // 3. Check bài cũ (TRONG PHẠM VI LỚP HỌC NÀY)
     let submission = await this.submissionTypeOrmRepo.findOne({
-      where: { studentId, lessonItemId },
+      where: { 
+        studentId, 
+        lessonItemId,
+        classId: classId // 👈 Quan trọng: Chỉ check trong lớp này
+      },
     });
 
     if (submission) {
       if (submission.status === SubmissionStatus.APPROVED) {
-        throw new BadRequestException('Bài tập này đã ĐẬU, không cần nộp lại.');
+        throw new BadRequestException('Bài tập này đã ĐẬU trong lớp này, không cần nộp lại.');
       }
       // Resubmit
       submission.gitLink = gitLink;
@@ -65,6 +75,7 @@ export class SubmissionService {
       submission = this.submissionTypeOrmRepo.create({
         studentId,
         lessonItemId,
+        classId, // 👈 Lưu classId
         gitLink,
         description,
         status: SubmissionStatus.PENDING,
@@ -75,13 +86,13 @@ export class SubmissionService {
     // Load full data
     const finalSubmission = await this.submissionTypeOrmRepo.findOne({
       where: { id: submission.id },
-      relations: ['student', 'lessonItem'],
+      relations: ['student', 'lessonItem', 'class'], // Load thêm class info nếu cần
     });
 
     return new SubmissionResponseDto(finalSubmission);
   }
 
-  // --- 2. CHẤM ĐIỂM (MỚI) ---
+  // --- 2. CHẤM ĐIỂM ---
   async grade(
     id: string,
     dto: GradeSubmissionDto,
@@ -89,17 +100,15 @@ export class SubmissionService {
   ): Promise<SubmissionResponseDto> {
     const submission = await this.submissionTypeOrmRepo.findOne({
       where: { id },
-      relations: ['student', 'lessonItem'],
+      relations: ['student', 'lessonItem', 'class'],
     });
 
     if (!submission) {
       throw new NotFoundException('Không tìm thấy bài nộp');
     }
 
-    // Cập nhật thông tin (Dùng ?? để tránh lỗi nếu gửi thiếu trường)
     if (dto.status) submission.status = dto.status;
     
-    // Lưu ý: score có thể là 0 nên dùng ?? thay vì ||
     if (dto.score !== undefined && dto.score !== null) {
         submission.score = dto.score;
     }
@@ -115,10 +124,10 @@ export class SubmissionService {
     return new SubmissionResponseDto(savedSubmission);
   }
 
+  // --- FIND ALL (ADMIN) ---
   async findAll(
     searchDto: SearchSubmissionDto,
   ): Promise<PaginatedSubmissionsResponseDto> {
-    // Sửa lỗi gọi sai tên biến: this.submissionRepository -> this.submissionCustomRepo
     const { submissions, total } = await this.submissionCustomRepo.findAll(searchDto);
 
     const submissionDtos = submissions.map(
@@ -134,10 +143,9 @@ export class SubmissionService {
   }
 
   async findOne(id: string): Promise<SubmissionResponseDto> {
-    // Ưu tiên dùng TypeOrmRepo để load relations đầy đủ nếu cần
     const submission = await this.submissionTypeOrmRepo.findOne({
         where: { id },
-        relations: ['student', 'lessonItem'] 
+        relations: ['student', 'lessonItem', 'class'] 
     });
 
     if (!submission) {
@@ -147,8 +155,9 @@ export class SubmissionService {
     return new SubmissionResponseDto(submission);
   }
 
+  // --- GET MY SUBMISSIONS ---
+  // Cần sửa lại logic này nếu muốn lấy theo class, hiện tại lấy tất cả lịch sử
   async findByStudentId(studentId: string): Promise<SubmissionResponseDto[]> {
-    // Sửa lỗi gọi sai tên biến
     const submissions = await this.submissionCustomRepo.findByStudentId(studentId);
 
     return submissions.map(

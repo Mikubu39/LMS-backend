@@ -12,12 +12,13 @@ export class SubmissionRepository {
     private submissionRepository: Repository<Submission>,
   ) {}
 
+  // Hàm create này có thể ít dùng vì service đã xử lý, nhưng cập nhật cho đồng bộ
   async create(
     createSubmissionDto: CreateSubmissionDto,
     studentId: string,
   ): Promise<Submission> {
     const submission = this.submissionRepository.create({
-      ...createSubmissionDto,
+      ...createSubmissionDto, // Đã bao gồm classId từ DTO
       studentId,
     });
     return this.submissionRepository.save(submission);
@@ -31,6 +32,7 @@ export class SubmissionRepository {
       studentId,
       gitLink,
       status,
+      classId, // 👈 Lấy tham số classId
       page = 1,
       limit = 10,
     } = searchDto;
@@ -38,7 +40,9 @@ export class SubmissionRepository {
 
     const queryBuilder = this.submissionRepository
       .createQueryBuilder('submission')
-      .leftJoinAndSelect('submission.student', 'student');
+      .leftJoinAndSelect('submission.student', 'student')
+      .leftJoinAndSelect('submission.class', 'class') // Join thêm Class để hiển thị
+      .leftJoinAndSelect('submission.lessonItem', 'lessonItem');
 
     if (search) {
       queryBuilder.where(
@@ -49,6 +53,11 @@ export class SubmissionRepository {
 
     if (studentId) {
       queryBuilder.andWhere('submission.studentId = :studentId', { studentId });
+    }
+
+    // 👇 Filter theo Class
+    if (classId) {
+      queryBuilder.andWhere('submission.classId = :classId', { classId });
     }
 
     if (gitLink) {
@@ -70,32 +79,11 @@ export class SubmissionRepository {
     return { submissions, total };
   }
 
-  async findOne(id: string): Promise<Submission | null> {
-    return this.submissionRepository.findOne({
-      where: { id },
-      relations: ['student'],
-    });
-  }
-
   async findByStudentId(studentId: string): Promise<Submission[]> {
     return this.submissionRepository.find({
       where: { studentId },
       order: { createdAt: 'DESC' },
-      relations: ['student'],
+      relations: ['student', 'class', 'lessonItem'], // Load thêm class
     });
   }
-
-  async update(
-    id: string,
-    updateData: Partial<Submission>,
-  ): Promise<Submission | null> {
-    await this.submissionRepository.update(id, updateData);
-    return this.findOne(id);
-  }
-
-  async delete(id: string): Promise<boolean> {
-    const result = await this.submissionRepository.delete(id);
-    return result.affected ? result.affected > 0 : false;
-  }
 }
-

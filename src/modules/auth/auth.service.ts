@@ -3,14 +3,13 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  BadRequestException, // Thêm import này
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './database/user.entity';
 import { RegisterAuthDto } from './dtos/register-auth.dto';
 import { LoginAuthDto } from './dtos/login-auth.dto';
-import { ChangePasswordDto } from './dtos/change-password.dto'; // Thêm import DTO
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config'; 
@@ -34,7 +33,6 @@ export class AuthService {
     }
 
     let finalStudentCode = studentCode;
-
     if (finalStudentCode) {
        const existingCode = await this.usersRepository.findOneBy({ student_code: finalStudentCode });
        if (existingCode) throw new ConflictException('Student code already exists');
@@ -113,5 +111,9 @@ export class AuthService {
     return { access_token };
   }
 
-  
+  // 🟢 MỚI: Hàm logout để xóa refresh token trong DB
+  async logout(userId: string) {
+    // Set hashed_refresh_token về null
+    return this.usersRepository.update(userId, { hashed_refresh_token: null });
+  }
 }

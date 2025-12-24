@@ -6,9 +6,12 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { User } from 'src/modules/auth/database/user.entity';
 import { LessonItem } from 'src/modules/lessons/database/lesson-item.entity';
+import { Class } from 'src/modules/classes/database/class.entity'; // 👈 Import Class
+
 export enum SubmissionStatus {
   PENDING = 'pending',
   REVIEWED = 'reviewed',
@@ -17,6 +20,9 @@ export enum SubmissionStatus {
 }
 
 @Entity('submissions')
+// 👇 QUAN TRỌNG: Khóa unique bao gồm student + lessonItem + class
+// Giúp học viên có thể nộp lại bài này ở lớp khác (học lại)
+@Unique(['studentId', 'lessonItemId', 'classId']) 
 export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -24,21 +30,28 @@ export class Submission {
   @Column({ type: 'uuid' })
   studentId: string;
 
-  // 👇 THÊM CỘT NÀY (Quan trọng nhất)
   @Column({ type: 'uuid' })
   lessonItemId: string;
+
+  // 👇 THÊM CỘT NÀY
+  @Column({ type: 'uuid', nullable: true }) 
+  classId: string; 
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'studentId' })
   student: User;
 
-  // 👇 Link sang LessonItem để query ngược nếu cần
-  @ManyToOne(() => LessonItem, { onDelete: 'CASCADE' }) // 👈 Thêm onDelete: CASCADE
+  @ManyToOne(() => LessonItem, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'lessonItemId' })
   lessonItem: LessonItem;
 
+  // 👇 THÊM RELATION NÀY
+  @ManyToOne(() => Class, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'classId' })
+  class: Class;
+
   @Column({ type: 'text' })
-  gitLink: string; // Hoặc đổi tên thành 'content' nếu muốn nộp cả text
+  gitLink: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -65,4 +78,3 @@ export class Submission {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-

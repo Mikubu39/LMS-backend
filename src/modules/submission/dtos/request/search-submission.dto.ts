@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsEnum, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SubmissionStatus } from '../../database/submission.entity'
 
@@ -10,6 +10,11 @@ export class SearchSubmissionDto {
   @IsOptional()
   @IsString()
   studentId?: string;
+
+  // 👇 Thêm filter theo lớp
+  @IsOptional()
+  @IsUUID()
+  classId?: string; 
 
   @IsOptional()
   @IsString()
@@ -36,4 +41,3 @@ export class SearchSubmissionDto {
   @IsString()
   lessonItemId?: string; 
 }
-

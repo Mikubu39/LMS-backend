@@ -18,17 +18,17 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { SubmissionService } from '../services/submission.service';
-import { CreateSubmissionDto } from '../dtos/request/create-submission.dto';
-import { SearchSubmissionDto } from '../dtos/request/search-submission.dto';
-import { SubmissionResponseDto } from '../dtos/response/submission-response.dto';
-import { PaginatedSubmissionsResponseDto } from '../dtos/response/paginated-submissions-response.dto';
+import { SubmissionService } from './submission.service';
+import { CreateSubmissionDto } from './dtos/request/create-submission.dto';
+import { SearchSubmissionDto } from './dtos/request/search-submission.dto';
+import { SubmissionResponseDto } from './dtos/response/submission-response.dto';
+import { PaginatedSubmissionsResponseDto } from './dtos/response/paginated-submissions-response.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from '../../../shared/guard/roles.guard';
-import type { AuthenticatedRequest } from '../../../shared//types';
+import { RolesGuard } from 'src/shared/guard/roles.guard';
+import type { AuthenticatedRequest } from 'src/shared/types';
 import { Roles } from 'src/shared/decorators/roles.decorator';
 import { UserRole } from 'src/constant/enum';
-import { GradeSubmissionDto } from '../dtos/request/grade-submission.dto';
+import { GradeSubmissionDto } from './dtos/request/grade-submission.dto';
 @ApiTags('10. Submissions (Student & Admin)')
 @Controller()
 export class SubmissionController {
