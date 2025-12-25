@@ -6,25 +6,28 @@ import { Conversation } from './conversation.entity'; // 👇 Import Conversatio
 
 @Entity('messages')
 export class Message {
-  @ApiProperty({ example: 'uuid-string', description: 'ID tin nhắn' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ example: 'Nội dung tin nhắn...', description: 'Nội dung' })
   @Column('text')
   content: string;
 
-  @ApiProperty({ type: () => User, description: 'Người gửi' })
+  // 🔑 FK UUID rõ ràng
+  @Column({ type: 'uuid' })
+  senderUserId: string;
+
   @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'senderUserId', referencedColumnName: 'user_id' })
   sender: User;
 
-  @ManyToOne(() => Conversation, (conversation) => conversation.messages, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Conversation, (conversation) => conversation.messages, {
+    onDelete: 'CASCADE',
+  })
   conversation: Conversation;
 
-  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
   @Column({ default: false })
-  is_read: boolean
+  is_read: boolean;
 }
