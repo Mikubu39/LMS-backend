@@ -34,7 +34,7 @@ import { KanjiModule } from './modules/kanji/kanji.module';
       port: parseInt(process.env.DB_PORT),
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
+      database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true, // Chỉ dùng trong dev, không dùng trong prod
     }),
