@@ -19,15 +19,22 @@ export class CoursesService {
   }
 
   // 2. LẤY DANH SÁCH KHÓA HỌC (PHÂN TRANG)
-  findAll(paginationOptions: { page: number; limit: number }): Promise<Course[]> {
+  async findAll(paginationOptions: { page: number; limit: number }): Promise<{ data: Course[]; total: number }> {
     const { page, limit } = paginationOptions;
+    
+    // Sử dụng QueryBuilder để tối ưu hiệu năng
+    const queryBuilder = this.courseRepository.createQueryBuilder('course');
 
-    return this.courseRepository.find({
-      take: limit,
-      skip: (page - 1) * limit,
-      relations: ['classes'], // ⬅ KHÓA HỌC THUỘC NHỮNG LỚP NÀO
-      order: { createdAt: 'DESC' },
-    });
+    queryBuilder
+      .leftJoinAndSelect('course.classes', 'classes') // Lấy thông tin lớp học (nếu cần)
+      .loadRelationCountAndMap('course.sessionsCount', 'course.sessions') // ✨ Đếm số session và gán vào biến sessionsCount
+      .orderBy('course.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [courses, total] = await queryBuilder.getManyAndCount();
+
+    return { data: courses, total }; // Trả về cấu trúc chuẩn { data, total }
   }
 
   // 3. LẤY CHI TIẾT KHÓA HỌC

@@ -6,8 +6,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm'; // [Cập nhật] Đảm bảo đã import In
-import { Class, ClassStatus } from './database/class.entity'; // [Cập nhật] Import thêm ClassStatus
+import { Repository, In } from 'typeorm';
+import { Class, ClassStatus } from './database/class.entity'; 
 import { CreateClassDto } from './dtos/create-class.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
 import { Course } from '../courses/database/courses.entity';
@@ -59,17 +59,25 @@ export class ClassesService {
   }
 
   // 2. FIND ALL
-  async findAll(currentUser: any): Promise<any[]> {
+  // src/modules/classes/classes.service.ts
+
+  async findAll(currentUser: any, page: number = 1, limit: number = 10): Promise<{data: any[], total: number}> {
+  const skip = (page - 1) * limit;
+
     const query = this.classRepo.createQueryBuilder('class')
       .leftJoinAndSelect('class.courses', 'courses')
       .leftJoinAndSelect('class.teachers', 'teachers')
       .loadRelationCountAndMap('class.total_students', 'class.enrollments')
-      .orderBy('class.created_at', 'DESC');
+      .orderBy('class.created_at', 'DESC')
+      .skip(skip) 
+      .take(limit); 
 
     if (currentUser.role === UserRole.TEACHER) {
       query.where('teachers.user_id = :teacherId', { teacherId: currentUser.user_id });
     }
-    return query.getMany();
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total };
   }
 
   // 3. FIND ONE
@@ -122,9 +130,9 @@ export class ClassesService {
     if (result.affected === 0) throw new NotFoundException('Class not found');
   }
 
-  // =================================================================
-  // 👇 [QUAN TRỌNG] PHẦN ĐÃ SỬA ĐỔI LOGIC TẠI ĐÂY
-  // =================================================================
+  
+  // [QUAN TRỌNG] PHẦN ĐÃ SỬA ĐỔI LOGIC TẠI ĐÂY
+  
   async addStudentToClass(classId: string, studentId: string) {
     // 1. Kiểm tra lớp học tồn tại
     const classInfo = await this.classRepo.findOneBy({ class_id: classId });

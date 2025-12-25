@@ -21,19 +21,17 @@ export class VocabularyService {
     private readonly kanjiRepo: Repository<Kanji>,
   ) {}
 
-  /**
-   * 🟢 HELPER: Tách các ký tự Kanji ra khỏi chuỗi
-   * Ví dụ: "日本" -> ["日", "本"]
-   * Ví dụ: "食べます" -> ["食"]
-   */
+ 
+   //HELPER: Tách các ký tự Kanji ra khỏi chuỗi
+  
   private extractKanji(text: string): string[] {
     const kanjiRegex = /[\u4e00-\u9faf]/g; // Regex dải mã Unicode của Kanji
     return text.match(kanjiRegex) || [];
   }
 
-  /**
-   * 🟢 TẠO MỚI (Có tự động link Kanji)
-   */
+  
+   // TẠO MỚI (Có tự động link Kanji)
+   
   async create(dto: CreateVocabularyDto) {
     const topic = await this.topicRepo.findOne({
       where: { id: dto.topicId },
@@ -45,7 +43,7 @@ export class VocabularyService {
       ? await this.kanjiRepo.find({ where: { id: In(dto.kanjiIds) } })
       : [];
 
-    // 2. 🟢 AUTO-DETECT: Tự động quét Kanji từ mặt chữ
+    // 2. AUTO-DETECT: Tự động quét Kanji từ mặt chữ
     const detectedChars = this.extractKanji(dto.word);
     if (detectedChars.length > 0) {
       const autoKanjis = await this.kanjiRepo.find({
@@ -73,9 +71,9 @@ export class VocabularyService {
   }
 
   /**
-   * 🟢 IMPORT HÀNG LOẠT (Dùng cho Excel/JSON Import)
-   * Tối ưu hiệu suất: Load Kanji 1 lần thay vì query trong vòng lặp
-   */
+    IMPORT HÀNG LOẠT (Dùng cho Excel/JSON Import)
+    Tối ưu hiệu suất: Load Kanji 1 lần thay vì query trong vòng lặp
+  **/
   async importBulk(topicId: string, dtos: CreateVocabularyDto[]) {
     const topic = await this.topicRepo.findOne({ where: { id: topicId } });
     if (!topic) throw new NotFoundException('Topic không tồn tại');
@@ -118,8 +116,6 @@ export class VocabularyService {
     // Bước 4: Lưu tất cả 1 lần
     return this.vocabRepo.save(vocabulariesToSave);
   }
-
-  // --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
 
   async findAll(params: {
     page: number;

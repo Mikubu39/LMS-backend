@@ -9,9 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
-  // ==========================
-  // ✅ CORS
-  // ==========================
+  // CORS
   app.enableCors({
     origin: ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -19,9 +17,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // ==========================
-  // ✅ GLOBAL VALIDATION
-  // ==========================
+  //GLOBAL VALIDATION
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -30,9 +26,9 @@ async function bootstrap() {
     }),
   );
 
-  // ==========================
-  // ✅ SWAGGER
-  // ==========================
+ 
+  //SWAGGER
+  
   const swaggerConfig = new DocumentBuilder()
     .setTitle('LMS E-Learning API')
     .setDescription(
@@ -52,32 +48,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api-docs', app, document);
+  //START SERVER
 
-  // ==========================
-  // ✅ SEED DATABASE (SAFE)
-  // ==========================
-  if (process.env.SEED === 'true') {
-    const dataSource = app.get(DataSource);
-
-    if (!dataSource.isInitialized) {
-      await dataSource.initialize();
-    }
-
-    console.log('🌱 Seeding database...');
-
-    // ❗ import động để tránh lỗi build
-    const { seedKanji } = await import('./database/seed/kanji.seed');
-    const { seedAll } = await import('./database/seed/full.seed');
-
-    await seedKanji(dataSource); // Kanji JLPT
-    await seedAll(dataSource);   // Topic + Vocabulary N5
-
-    console.log('✅ Seed completed');
-  }
-
-  // ==========================
-  // ✅ START SERVER
-  // ==========================
   const PORT = process.env.PORT || 3000;
   await app.listen(PORT);
 

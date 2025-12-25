@@ -11,7 +11,7 @@ export class CreateClassDto {
   @IsNotEmpty() @IsString()
   name: string;
 
-  // 👇 SỬA: Thêm IsOptional
+  
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()

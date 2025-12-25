@@ -1,8 +1,7 @@
-// ✅ src/app.module.ts
+
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
 // Import Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
@@ -12,7 +11,6 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { QuestionsModule } from './modules/questions/questions.module';
-import { LessonVideoModule } from './modules/lesson-video/lesson-video.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { StudentModule } from './modules/student/student.module';
 import { SubmissionModule } from './modules/submission/submission.module';
@@ -38,7 +36,7 @@ import { KanjiModule } from './modules/kanji/kanji.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       autoLoadEntities: true,
-      synchronize: true, // ❗ production nhớ tắt
+      synchronize: true, // Chỉ dùng trong dev, không dùng trong prod
     }),
     
     // Các module chức năng
@@ -51,7 +49,6 @@ import { KanjiModule } from './modules/kanji/kanji.module';
     CloudinaryModule,
     UploadModule,
     QuestionsModule,
-    LessonVideoModule,
     PostsModule,
     StudentModule,
     SubmissionModule,

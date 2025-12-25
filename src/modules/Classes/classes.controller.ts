@@ -8,7 +8,10 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
-  Request, 
+  Request,
+  Query,
+  DefaultValuePipe, 
+  ParseIntPipe
 } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dtos/create-class.dto';
@@ -34,14 +37,17 @@ export class ClassesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.TEACHER)
-  @ApiOperation({
-    summary: 'Lấy danh sách lớp (Admin thấy hết, Teacher thấy lớp mình)',
-  })
-  findAll(@Request() req) {
-    return this.classesService.findAll(req.user);
-  }
-
+@Roles(UserRole.ADMIN, UserRole.TEACHER)
+@ApiOperation({ summary: 'Lấy danh sách lớp có phân trang' })
+findAll(
+  @Request() req,
+  // Sử dụng Pipe để đảm bảo giá trị luôn là số (Int) và có mặc định nếu thiếu
+  @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number
+) {
+  // Đảm bảo page và limit là kiểu số
+  return this.classesService.findAll(req.user, Number(page), Number(limit));
+}
   @Get('my-enrollments')
   @Roles(UserRole.STUDENT, UserRole.TEACHER, UserRole.ADMIN) // Cho phép Student truy cập
   @ApiOperation({ summary: 'Lấy danh sách lớp đang học của user hiện tại' })
